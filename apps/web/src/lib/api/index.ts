@@ -1,1 +1,240 @@
-﻿export {};
+export type PerfilUsuario = 'ADMIN' | 'OPERACIONAL';
+
+export type RegimeTributario =
+  | 'SIMPLES_NACIONAL'
+  | 'LUCRO_PRESUMIDO'
+  | 'LUCRO_REAL'
+  | 'OUTRO';
+
+export type StatusAcessoEmpresa =
+  | 'DISPONIVEL'
+  | 'INDISPONIVEL'
+  | 'BLOQUEADO'
+  | 'NAO_VERIFICADO';
+
+export type StatusProcuracaoEmpresa =
+  | 'VALIDA'
+  | 'INVALIDA'
+  | 'PENDENTE'
+  | 'NAO_VERIFICADA';
+
+export type TipoIntegracao = 'MANUAL' | 'API' | 'RPA';
+
+export type StatusIntegracao =
+  | 'ATIVA'
+  | 'INATIVA'
+  | 'ERRO'
+  | 'NAO_CONFIGURADA';
+
+export type AuthUser = {
+  email: string;
+  id: string;
+  nome: string;
+  perfil: PerfilUsuario;
+};
+
+export type LoginResponse = {
+  user: AuthUser;
+};
+
+export type ResponsavelInternoSummary = {
+  ativo: boolean;
+  email: string;
+  id: string;
+  nome: string;
+  usuarioInternoId: string;
+};
+
+export type ResponsavelInternoDetail = {
+  ativo: boolean;
+  email: string;
+  id: string;
+  nome: string;
+  usuarioInterno: {
+    ativo: boolean;
+    email: string;
+    id: string;
+    nome: string;
+    perfil: PerfilUsuario;
+  };
+};
+
+export type CompanyBase = {
+  cnpj: string;
+  createdAt: string;
+  id: string;
+  nomeFantasia: string | null;
+  observacoesOperacionais: string | null;
+  razaoSocial: string;
+  regimeTributario: RegimeTributario;
+  responsavelInternoId: string | null;
+  statusAcesso: StatusAcessoEmpresa;
+  statusProcuracao: StatusProcuracaoEmpresa;
+  ultimaVarreduraEm: string | null;
+  ultimoEventoRelevanteEm: string | null;
+  updatedAt: string;
+};
+
+export type CompanyListItem = CompanyBase & {
+  responsavelInterno: ResponsavelInternoSummary | null;
+};
+
+export type CompanyIntegration = {
+  createdAt: string;
+  empresaId: string;
+  id: string;
+  mensagemErroAtual: string | null;
+  observacoes: string | null;
+  statusIntegracao: StatusIntegracao;
+  tipoIntegracao: TipoIntegracao;
+  updatedAt: string;
+  ultimoErroEm: string | null;
+  ultimoSucessoEm: string | null;
+};
+
+export type CompanyDetailItem = CompanyBase & {
+  integracoes: CompanyIntegration[];
+  responsavelInterno: ResponsavelInternoDetail | null;
+};
+
+export type CompanyCreateInput = {
+  cnpj: string;
+  nomeFantasia?: string | undefined;
+  observacoesOperacionais?: string | undefined;
+  razaoSocial: string;
+  regimeTributario: RegimeTributario;
+  responsavelInternoId?: string | undefined;
+  statusAcesso?: StatusAcessoEmpresa | undefined;
+  statusProcuracao?: StatusProcuracaoEmpresa | undefined;
+};
+
+export type CompanyUpdateInput = Partial<CompanyCreateInput>;
+
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+type ApiRequestOptions = Omit<RequestInit, 'body' | 'headers'> & {
+  body?: unknown;
+  headers?: HeadersInit;
+};
+
+function parseResponseBody(text: string): unknown {
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
+}
+
+function getErrorMessage(payload: unknown, status: number): string {
+  if (typeof payload === 'string' && payload.trim()) {
+    return payload;
+  }
+
+  if (payload && typeof payload === 'object') {
+    const message = (payload as { message?: unknown }).message;
+
+    if (Array.isArray(message) && message.length > 0) {
+      const firstMessage = message[0];
+
+      if (typeof firstMessage === 'string' && firstMessage.trim()) {
+        return firstMessage;
+      }
+    }
+
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+
+    const error = (payload as { error?: unknown }).error;
+
+    if (typeof error === 'string' && error.trim()) {
+      return error;
+    }
+  }
+
+  return `Falha na requisicao (${status}).`;
+}
+
+async function apiRequest<T>(
+  path: string,
+  options: ApiRequestOptions = {}
+): Promise<T> {
+  const { body, headers, ...rest } = options;
+  const requestHeaders = new Headers(headers);
+
+  if (body !== undefined && !requestHeaders.has('Content-Type')) {
+    requestHeaders.set('Content-Type', 'application/json');
+  }
+
+  const requestInit: RequestInit = {
+    ...rest,
+    credentials: 'include',
+    headers: requestHeaders
+  };
+
+  if (body !== undefined) {
+    requestInit.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, requestInit);
+
+  const payload = parseResponseBody(await response.text());
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(payload, response.status));
+  }
+
+  return payload as T;
+}
+
+export async function getCurrentUser(): Promise<AuthUser> {
+  return apiRequest<AuthUser>('/auth/me');
+}
+
+export async function login(
+  email: string,
+  senha: string
+): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>('/auth/login', {
+    body: { email, senha },
+    method: 'POST'
+  });
+}
+
+export async function logout(): Promise<{ success: boolean }> {
+  return apiRequest<{ success: boolean }>('/auth/logout', {
+    method: 'POST'
+  });
+}
+
+export async function listCompanies(): Promise<CompanyListItem[]> {
+  return apiRequest<CompanyListItem[]>('/companies');
+}
+
+export async function getCompany(id: string): Promise<CompanyDetailItem> {
+  return apiRequest<CompanyDetailItem>(`/companies/${id}`);
+}
+
+export async function createCompany(
+  payload: CompanyCreateInput
+): Promise<CompanyDetailItem> {
+  return apiRequest<CompanyDetailItem>('/companies', {
+    body: payload,
+    method: 'POST'
+  });
+}
+
+export async function updateCompany(
+  id: string,
+  payload: CompanyUpdateInput
+): Promise<CompanyDetailItem> {
+  return apiRequest<CompanyDetailItem>(`/companies/${id}`, {
+    body: payload,
+    method: 'PATCH'
+  });
+}
