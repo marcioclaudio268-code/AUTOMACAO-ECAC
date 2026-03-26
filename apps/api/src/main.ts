@@ -9,6 +9,11 @@ import { logger } from './common/utils/logger';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
+  app.enableCors({
+    credentials: true,
+    origin: true
+  });
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

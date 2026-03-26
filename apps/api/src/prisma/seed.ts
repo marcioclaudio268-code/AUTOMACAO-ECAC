@@ -7,6 +7,7 @@ import {
   StatusProcuracaoEmpresa,
   TipoIntegracao
 } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -47,19 +48,21 @@ async function upsertManualIntegration(empresaId: string, observacoes: string) {
 }
 
 async function main() {
+  const adminSenhaHash = await bcrypt.hash('admin123', 10);
+
   const admin = await prisma.usuarioInterno.upsert({
     create: {
       ativo: true,
       email: 'admin@ecac.local',
       nome: 'Admin ECAC',
       perfil: PerfilUsuario.ADMIN,
-      senhaHash: 'seed-admin-hash'
+      senhaHash: adminSenhaHash
     },
     update: {
       ativo: true,
       nome: 'Admin ECAC',
       perfil: PerfilUsuario.ADMIN,
-      senhaHash: 'seed-admin-hash'
+      senhaHash: adminSenhaHash
     },
     where: {
       email: 'admin@ecac.local'
@@ -154,4 +157,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
