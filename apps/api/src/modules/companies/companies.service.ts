@@ -4,7 +4,11 @@ import {
   Injectable,
   NotFoundException
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  Prisma,
+  StatusAcessoEmpresa,
+  StatusProcuracaoEmpresa
+} from '@prisma/client';
 
 import { isBasicCnpj, normalizeCnpj } from '../../common/utils/cnpj';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -51,20 +55,33 @@ export class CompaniesService {
   async create(dto: CreateCompanyDto) {
     const cnpj = this.parseAndValidateCnpj(dto.cnpj);
 
-    await this.assertResponsavelExists(dto.responsavelInternoId);
+    if (dto.responsavelInternoId !== undefined) {
+      await this.assertResponsavelExists(dto.responsavelInternoId);
+    }
     await this.assertCnpjAvailable(cnpj);
 
+    const data: Prisma.EmpresaCreateInput = {
+      cnpj,
+      nomeFantasia: dto.nomeFantasia?.trim() || null,
+      observacoesOperacionais: dto.observacoesOperacionais?.trim() || null,
+      razaoSocial: dto.razaoSocial.trim(),
+      regimeTributario: dto.regimeTributario,
+      statusAcesso:
+        dto.statusAcesso ?? StatusAcessoEmpresa.NAO_VERIFICADO,
+      statusProcuracao:
+        dto.statusProcuracao ?? StatusProcuracaoEmpresa.NAO_VERIFICADA
+    };
+
+    if (dto.responsavelInternoId !== undefined) {
+      data.responsavelInterno = {
+        connect: {
+          id: dto.responsavelInternoId
+        }
+      };
+    }
+
     return this.prisma.empresa.create({
-      data: {
-        cnpj,
-        nomeFantasia: dto.nomeFantasia?.trim() || null,
-        observacoesOperacionais: dto.observacoesOperacionais?.trim() || null,
-        razaoSocial: dto.razaoSocial.trim(),
-        regimeTributario: dto.regimeTributario,
-        responsavelInternoId: dto.responsavelInternoId,
-        statusAcesso: dto.statusAcesso,
-        statusProcuracao: dto.statusProcuracao
-      },
+      data,
       include: detailInclude
     });
   }
@@ -212,4 +229,3 @@ export class CompaniesService {
     }
   }
 }
-

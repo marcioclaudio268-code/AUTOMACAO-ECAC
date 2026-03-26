@@ -2,19 +2,21 @@
   "name": "ecac-automacao",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "pnpm@10.33.0",
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "scripts": {
-    "dev:web": "pnpm --filter @ecac/web dev",
-    "dev:api": "pnpm --filter @ecac/api dev",
-    "dev": "pnpm -r --parallel --filter @ecac/web --filter @ecac/api dev",
-    "db:generate": "pnpm --filter @ecac/api prisma:generate",
-    "db:migrate": "pnpm --filter @ecac/api db:migrate",
-    "db:seed": "pnpm --filter @ecac/api db:seed",
-    "build": "pnpm -r --if-present build",
-    "lint": "pnpm -r --if-present lint",
-    "test": "pnpm -r --if-present test"
+    "dev:web": "corepack pnpm --filter @ecac/web dev",
+    "dev:api": "corepack pnpm --filter @ecac/api dev",
+    "dev": "corepack pnpm -r --parallel --filter @ecac/web --filter @ecac/api dev",
+    "prisma:generate": "corepack pnpm --filter @ecac/api prisma:generate",
+    "db:generate": "corepack pnpm --filter @ecac/api prisma:generate",
+    "db:migrate": "corepack pnpm --filter @ecac/api db:migrate",
+    "db:seed": "corepack pnpm --filter @ecac/api db:seed",
+    "build": "corepack pnpm -r --if-present build",
+    "lint": "corepack pnpm -r --if-present lint",
+    "test": "corepack pnpm -r --if-present test"
   }
 }

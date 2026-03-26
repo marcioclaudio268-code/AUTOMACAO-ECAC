@@ -78,10 +78,10 @@ model Empresa {
   razaoSocial             String
   nomeFantasia            String?
   regimeTributario        RegimeTributario
-  responsavelInternoId    String
-  responsavelInterno      ResponsavelInterno    @relation(fields: [responsavelInternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  statusAcesso            StatusAcessoEmpresa
-  statusProcuracao        StatusProcuracaoEmpresa
+  responsavelInternoId    String?
+  responsavelInterno      ResponsavelInterno?   @relation(fields: [responsavelInternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  statusAcesso            StatusAcessoEmpresa   @default(NAO_VERIFICADO)
+  statusProcuracao        StatusProcuracaoEmpresa @default(NAO_VERIFICADA)
   observacoesOperacionais String?               @db.Text
   ultimaVarreduraEm       DateTime?
   ultimoEventoRelevanteEm DateTime?
@@ -107,4 +107,3 @@ model IntegracaoEmpresa {
 
   @@index([empresaId])
 }
-

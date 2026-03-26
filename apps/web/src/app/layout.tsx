@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'ECAC AUTOMAÇÃO',
-  description: 'Base do monorepo ECAC AUTOMAÇÃO'
+  title: 'ECAC Automacao',
+  description: 'Base do monorepo ECAC Automacao'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

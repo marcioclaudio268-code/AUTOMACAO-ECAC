@@ -42,15 +42,18 @@ export class CreateCompanyDto {
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value
   )
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
   responsavelInternoId!: string;
 
+  @IsOptional()
   @IsEnum(StatusAcessoEmpresa)
-  statusAcesso!: StatusAcessoEmpresa;
+  statusAcesso?: StatusAcessoEmpresa;
 
+  @IsOptional()
   @IsEnum(StatusProcuracaoEmpresa)
-  statusProcuracao!: StatusProcuracaoEmpresa;
+  statusProcuracao?: StatusProcuracaoEmpresa;
 
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value
