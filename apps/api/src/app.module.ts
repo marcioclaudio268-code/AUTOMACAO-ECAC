@@ -13,6 +13,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { ParcelamentosModule } from './modules/parcelamentos/parcelamentos.module';
 import { PendenciasModule } from './modules/pendencias/pendencias.module';
+import { ResponsaveisModule } from './modules/responsaveis/responsaveis.module';
 import { ScansModule } from './modules/scans/scans.module';
 import { TarefasModule } from './modules/tarefas/tarefas.module';
 import { UsersModule } from './modules/users/users.module';
@@ -21,6 +22,7 @@ const featureModules = [
   AuthModule,
   UsersModule,
   CompaniesModule,
+  ResponsaveisModule,
   IntegrationsModule,
   ScansModule,
   EventsModule,

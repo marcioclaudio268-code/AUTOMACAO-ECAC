@@ -110,6 +110,33 @@ export type CompanyCreateInput = {
 
 export type CompanyUpdateInput = Partial<CompanyCreateInput>;
 
+export type ResponsavelInternoRecord = {
+  ativo: boolean;
+  createdAt: string;
+  email: string;
+  id: string;
+  nome: string;
+  updatedAt: string;
+  usuarioInternoId: string;
+  usuarioInterno: {
+    ativo: boolean;
+    email: string;
+    id: string;
+    nome: string;
+    perfil: PerfilUsuario;
+  };
+};
+
+export type ResponsavelInternoCreateInput = {
+  ativo?: boolean | undefined;
+  email: string;
+  nome: string;
+  usuarioInternoId: string;
+};
+
+export type ResponsavelInternoUpdateInput =
+  Partial<ResponsavelInternoCreateInput>;
+
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -234,6 +261,35 @@ export async function updateCompany(
   payload: CompanyUpdateInput
 ): Promise<CompanyDetailItem> {
   return apiRequest<CompanyDetailItem>(`/companies/${id}`, {
+    body: payload,
+    method: 'PATCH'
+  });
+}
+
+export async function listResponsaveis(): Promise<ResponsavelInternoRecord[]> {
+  return apiRequest<ResponsavelInternoRecord[]>('/responsaveis');
+}
+
+export async function getResponsavel(
+  id: string
+): Promise<ResponsavelInternoRecord> {
+  return apiRequest<ResponsavelInternoRecord>(`/responsaveis/${id}`);
+}
+
+export async function createResponsavel(
+  payload: ResponsavelInternoCreateInput
+): Promise<ResponsavelInternoRecord> {
+  return apiRequest<ResponsavelInternoRecord>('/responsaveis', {
+    body: payload,
+    method: 'POST'
+  });
+}
+
+export async function updateResponsavel(
+  id: string,
+  payload: ResponsavelInternoUpdateInput
+): Promise<ResponsavelInternoRecord> {
+  return apiRequest<ResponsavelInternoRecord>(`/responsaveis/${id}`, {
     body: payload,
     method: 'PATCH'
   });

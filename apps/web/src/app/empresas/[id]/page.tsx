@@ -7,10 +7,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { requireSession, signOut } from '@/lib/auth';
 import {
   getCompany,
+  listResponsaveis,
   updateCompany,
   type CompanyCreateInput,
   type CompanyDetailItem,
   type RegimeTributario,
+  type ResponsavelInternoRecord,
   type StatusAcessoEmpresa,
   type StatusProcuracaoEmpresa
 } from '@/lib/api';
@@ -71,11 +73,20 @@ function toFormState(company: CompanyDetailItem): CompanyFormState {
   };
 }
 
+function formatResponsavelOption(responsavel: ResponsavelInternoRecord) {
+  return `${responsavel.nome} (${responsavel.email})${
+    responsavel.ativo ? '' : ' - Inativo'
+  }`;
+}
+
 export default function CompanyDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const companyId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [company, setCompany] = useState<CompanyDetailItem | null>(null);
+  const [responsaveis, setResponsaveis] = useState<ResponsavelInternoRecord[]>(
+    []
+  );
   const [form, setForm] = useState<CompanyFormState>(initialFormState);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,6 +116,24 @@ export default function CompanyDetailPage() {
 
         setCompany(data);
         setForm(toFormState(data));
+
+        try {
+          const items = await listResponsaveis();
+
+          if (active) {
+            setResponsaveis(items);
+          }
+        } catch (responsaveisError) {
+          if (!active) {
+            return;
+          }
+
+          setError(
+            responsaveisError instanceof Error
+              ? responsaveisError.message
+              : 'Falha ao carregar responsaveis.'
+          );
+        }
       } catch (loadError) {
         if (!active) {
           return;
@@ -406,24 +435,33 @@ export default function CompanyDetailPage() {
                     />
                   </label>
 
-                  <label className="space-y-2">
-                    <span className="block text-sm font-medium text-slate-700">
-                      Responsavel interno ID
-                    </span>
-                    <input
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                      name="responsavelInternoId"
-                      onChange={(event) =>
-                        setForm((current) => ({
-                          ...current,
+              <label className="space-y-2">
+                <span className="block text-sm font-medium text-slate-700">
+                  Responsavel interno
+                </span>
+                <select
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                  name="responsavelInternoId"
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
                           responsavelInternoId: event.target.value
                         }))
                       }
-                      placeholder="Opcional"
-                      type="text"
-                      value={form.responsavelInternoId}
-                    />
-                  </label>
+                  value={form.responsavelInternoId}
+                >
+                  <option value="">
+                    {responsaveis.length === 0
+                      ? 'Sem responsavel cadastrado'
+                      : 'Sem responsavel'}
+                  </option>
+                  {responsaveis.map((responsavel) => (
+                    <option key={responsavel.id} value={responsavel.id}>
+                      {formatResponsavelOption(responsavel)}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
                   <label className="space-y-2">
                     <span className="block text-sm font-medium text-slate-700">

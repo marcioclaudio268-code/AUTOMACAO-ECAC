@@ -4,14 +4,16 @@ import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { requireSession, signOut } from '@/lib/auth';
 import {
   createCompany,
+  listResponsaveis,
   type CompanyCreateInput,
   type RegimeTributario,
+  type ResponsavelInternoRecord,
   type StatusAcessoEmpresa,
   type StatusProcuracaoEmpresa
 } from '@/lib/api';
+import { requireSession, signOut } from '@/lib/auth';
 import {
   REGIME_TRIBUTARIO_OPTIONS,
   STATUS_ACESSO_OPTIONS,
@@ -53,9 +55,18 @@ function buildPayload(form: CompanyFormState): CompanyCreateInput {
   };
 }
 
+function formatResponsavelOption(responsavel: ResponsavelInternoRecord) {
+  return `${responsavel.nome} (${responsavel.email})${
+    responsavel.ativo ? '' : ' - Inativo'
+  }`;
+}
+
 export default function NovaEmpresaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [responsaveis, setResponsaveis] = useState<ResponsavelInternoRecord[]>(
+    []
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState('');
@@ -67,6 +78,14 @@ export default function NovaEmpresaPage() {
     async function load() {
       try {
         await requireSession();
+
+        const items = await listResponsaveis();
+
+        if (!active) {
+          return;
+        }
+
+        setResponsaveis(items);
       } catch (loadError) {
         if (
           active &&
@@ -84,7 +103,6 @@ export default function NovaEmpresaPage() {
               : 'Falha ao validar sessao.'
           );
         }
-        return;
       } finally {
         if (active) {
           setLoading(false);
@@ -234,9 +252,9 @@ export default function NovaEmpresaPage() {
 
               <label className="space-y-2">
                 <span className="block text-sm font-medium text-slate-700">
-                  Responsavel interno ID
+                  Responsavel interno
                 </span>
-                <input
+                <select
                   className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
                   name="responsavelInternoId"
                   onChange={(event) =>
@@ -245,10 +263,19 @@ export default function NovaEmpresaPage() {
                       responsavelInternoId: event.target.value
                     }))
                   }
-                  placeholder="Opcional"
-                  type="text"
                   value={form.responsavelInternoId}
-                />
+                >
+                  <option value="">
+                    {responsaveis.length === 0
+                      ? 'Sem responsavel cadastrado'
+                      : 'Sem responsavel'}
+                  </option>
+                  {responsaveis.map((responsavel) => (
+                    <option key={responsavel.id} value={responsavel.id}>
+                      {formatResponsavelOption(responsavel)}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="space-y-2">
