@@ -1,0 +1,17 @@
+{
+  "name": "ecac-automacao",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "pnpm --filter @ecac/web dev",
+    "dev:api": "pnpm --filter @ecac/api dev",
+    "dev": "pnpm -r --parallel --filter @ecac/web --filter @ecac/api dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test"
+  }
+}
