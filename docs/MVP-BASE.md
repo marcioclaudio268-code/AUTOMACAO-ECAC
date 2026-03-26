@@ -1,740 +1,564 @@
-\# MVP-BASE.md
+# MVP-BASE.md
 
+## Projeto
 
+**ECAC AUTOMAÇÃO**
 
-\## Projeto
+## Status
 
-\*\*ECAC AUTOMAÇÃO\*\*
+**Documento mestre de escopo da V1**
 
+## Status atual do projeto
 
+- base técnica estabilizada
+- monorepo funcional com apps/web e apps/api
+- Prisma modelado com UsuarioInterno, ResponsavelInterno, Empresa e IntegracaoEmpresa
+- migration inicial e seed mínimo configurados
+- healthcheck implementado
+- CRUD básico de empresas implementado
+- autenticação interna mínima implementada com login, sessão atual e logout
+- tela mínima de login implementada no frontend
+- workspace estabilizado para seguir para a próxima etapa
 
-\## Status
+## Objetivo do sistema
 
-\*\*Documento mestre de escopo da V1\*\*
+Construir um sistema interno para escritório contábil que permita **varrer automaticamente a carteira de empresas**, **consolidar pendências fiscais**, **acompanhar parcelamentos**, **identificar dívida ativa** e **organizar a apuração mensal por prioridade**, reduzindo trabalho manual, repetitivo e disperso.
 
+O sistema deve transformar a operação do escritório em **fila de exceção**: o time atua apenas onde houver evento, risco, pendência ou necessidade real de tratamento.
 
+---
 
-\## Objetivo do sistema
-
-Construir um sistema interno para escritório contábil que permita \*\*varrer automaticamente a carteira de empresas\*\*, \*\*consolidar pendências fiscais\*\*, \*\*acompanhar parcelamentos\*\*, \*\*identificar dívida ativa\*\* e \*\*organizar a apuração mensal por prioridade\*\*, reduzindo trabalho manual, repetitivo e disperso.
-
-
-
-O sistema deve transformar a operação do escritório em \*\*fila de exceção\*\*: o time atua apenas onde houver evento, risco, pendência ou necessidade real de tratamento.
-
-
-
-\---
-
-
-
-\## Problema operacional que o sistema resolve
+## Problema operacional que o sistema resolve
 
 Hoje, mesmo com procurações válidas, o escritório precisa repetir manualmente, empresa por empresa:
 
+- consulta de pendências
 
+- consulta de parcelamentos
 
-\- consulta de pendências
+- consulta de dívida ativa
 
-\- consulta de parcelamentos
+- conferência de situação fiscal
 
-\- consulta de dívida ativa
+- acompanhamento para apuração mensal
 
-\- conferência de situação fiscal
-
-\- acompanhamento para apuração mensal
-
-\- rechecagem de empresas sem alteração real
-
-
+- rechecagem de empresas sem alteração real
 
 Esse processo consome tempo, gera retrabalho, aumenta o risco de esquecimento e reduz a capacidade operacional sobre uma carteira grande.
 
-
-
 O sistema existe para eliminar a varredura cega e concentrar o esforço humano apenas no que exige decisão ou ação.
 
+---
 
+## Princípio do projeto
 
-\---
-
-
-
-\## Princípio do projeto
-
-\*\*Confiabilidade operacional primeiro, limpeza estrutural em seguida.\*\*
-
-
+**Confiabilidade operacional primeiro, limpeza estrutural em seguida.**
 
 Toda decisão técnica da V1 deve priorizar:
 
+1. estabilidade
 
+2. rastreabilidade
 
-1\. estabilidade
+3. controle operacional
 
-2\. rastreabilidade
+4. simplicidade de uso
 
-3\. controle operacional
+5. redução de trabalho manual
 
-4\. simplicidade de uso
+---
 
-5\. redução de trabalho manual
-
-
-
-\---
-
-
-
-\## O que entra na V1
+## O que entra na V1
 
 A V1 deve conter apenas o núcleo operacional necessário para gerar ganho real no dia a dia do escritório.
 
-
-
-\### 1. Cadastro central de empresas
+### 1. Cadastro central de empresas
 
 Cada empresa deve possuir, no mínimo:
 
+- CNPJ
 
+- razão social
 
-\- CNPJ
+- nome fantasia
 
-\- razão social
+- regime tributário
 
-\- nome fantasia
+- responsável interno
 
-\- regime tributário
+- status da procuração
 
-\- responsável interno
+- status de integração
 
-\- status da procuração
+- observações operacionais
 
-\- status de integração
+- data da última varredura
 
-\- observações operacionais
+- data do último evento relevante
 
-\- data da última varredura
-
-\- data do último evento relevante
-
-
-
-\### 2. Controle de procurações e acessos
+### 2. Controle de procurações e acessos
 
 O sistema deve registrar se a empresa:
 
+- possui procuração válida
 
+- possui acesso operacional disponível
 
-\- possui procuração válida
+- está apta para consulta automatizada
 
-\- possui acesso operacional disponível
+- está bloqueada por ausência de acesso
 
-\- está apta para consulta automatizada
+- exige tratamento manual
 
-\- está bloqueada por ausência de acesso
-
-\- exige tratamento manual
-
-
-
-\### 3. Dashboard principal
+### 3. Dashboard principal
 
 Tela inicial com visão consolidada da carteira:
 
+- total de empresas
 
+- empresas OK
 
-\- total de empresas
+- empresas com pendência
 
-\- empresas OK
+- empresas com parcelamento
 
-\- empresas com pendência
+- empresas com dívida ativa
 
-\- empresas com parcelamento
+- empresas bloqueadas por acesso
 
-\- empresas com dívida ativa
+- empresas com falha de integração
 
-\- empresas bloqueadas por acesso
+- empresas prontas para apuração
 
-\- empresas com falha de integração
+- empresas bloqueadas para apuração
 
-\- empresas prontas para apuração
-
-\- empresas bloqueadas para apuração
-
-
-
-\### 4. Motor de varredura
+### 4. Motor de varredura
 
 O sistema deve executar varreduras automáticas para atualizar o status operacional das empresas.
 
-
-
 A V1 deve prever:
 
+- varredura diária leve
 
+- varredura semanal completa
 
-\- varredura diária leve
-
-\- varredura semanal completa
-
-\- varredura mensal de fechamento
-
-
+- varredura mensal de fechamento
 
 A varredura deve gerar eventos internos, como:
 
+- pendência detectada
 
+- nova dívida ativa detectada
 
-\- pendência detectada
+- parcelamento encontrado
 
-\- nova dívida ativa detectada
+- parcela vencendo
 
-\- parcelamento encontrado
+- parcela em atraso
 
-\- parcela vencendo
+- falha de integração
 
-\- parcela em atraso
+- empresa bloqueada por acesso
 
-\- falha de integração
+- empresa pronta para apuração
 
-\- empresa bloqueada por acesso
-
-\- empresa pronta para apuração
-
-
-
-\### 5. Painel de pendências
+### 5. Painel de pendências
 
 Lista central de tudo o que exige ação humana.
 
-
-
 Cada pendência deve conter:
 
+- empresa
 
+- tipo
 
-\- empresa
+- origem
 
-\- tipo
+- descrição objetiva
 
-\- origem
+- data de detecção
 
-\- descrição objetiva
+- prioridade
 
-\- data de detecção
+- responsável
 
-\- prioridade
+- prazo
 
-\- responsável
+- status
 
-\- prazo
+- evidência vinculada
 
-\- status
-
-\- evidência vinculada
-
-
-
-\### 6. Painel de parcelamentos
+### 6. Painel de parcelamentos
 
 Por empresa, o sistema deve mostrar:
 
+- existência de parcelamento
 
+- situação atual
 
-\- existência de parcelamento
+- modalidade
 
-\- situação atual
+- quantidade de parcelas
 
-\- modalidade
+- parcela atual
 
-\- quantidade de parcelas
+- vencimento relevante
 
-\- parcela atual
+- indício de atraso
 
-\- vencimento relevante
+- necessidade de ação
 
-\- indício de atraso
-
-\- necessidade de ação
-
-
-
-\### 7. Painel de dívida ativa
+### 7. Painel de dívida ativa
 
 Por empresa, o sistema deve mostrar:
 
+- existência de dívida ativa
 
+- quantidade de inscrições
 
-\- existência de dívida ativa
+- valor consolidado
 
-\- quantidade de inscrições
+- situação identificada
 
-\- valor consolidado
+- necessidade de conferência ou tratamento
 
-\- situação identificada
-
-\- necessidade de conferência ou tratamento
-
-
-
-\### 8. Workspace de apuração mensal
+### 8. Workspace de apuração mensal
 
 A V1 deve organizar a apuração por competência, sem necessariamente executar cálculo tributário completo.
 
-
-
 Estados mínimos:
 
+- aguardando varredura
 
+- pendente de análise
 
-\- aguardando varredura
+- bloqueada por pendência
 
-\- pendente de análise
+- pronta para apuração
 
-\- bloqueada por pendência
+- em apuração
 
-\- pronta para apuração
+- aguardando validação
 
-\- em apuração
+- concluída
 
-\- aguardando validação
-
-\- concluída
-
-
-
-\### 9. Auditoria e histórico
+### 9. Auditoria e histórico
 
 Toda consulta, varredura, mudança de status e ação manual relevante deve deixar registro.
 
-
-
 O sistema deve armazenar:
 
+- data e hora
 
+- empresa
 
-\- data e hora
+- origem da ação
 
-\- empresa
+- resultado
 
-\- origem da ação
+- usuário ou job responsável
 
-\- resultado
+- observação
 
-\- usuário ou job responsável
+- evidência quando aplicável
 
-\- observação
-
-\- evidência quando aplicável
-
-
-
-\### 10. Alertas internos
+### 10. Alertas internos
 
 O sistema deve alertar o time quando houver:
 
+- parcela vencendo
 
+- parcelamento em atraso
 
-\- parcela vencendo
+- nova pendência relevante
 
-\- parcelamento em atraso
+- nova dívida ativa
 
-\- nova pendência relevante
+- empresa bloqueada para apuração
 
-\- nova dívida ativa
+- falha de integração em empresa crítica
 
-\- empresa bloqueada para apuração
+---
 
-\- falha de integração em empresa crítica
-
-
-
-\---
-
-
-
-\## O que não entra na V1
+## O que não entra na V1
 
 A V1 não deve tentar resolver tudo. Ficam fora do escopo inicial:
 
+- ERP completo do escritório
 
+- CRM
 
-\- ERP completo do escritório
+- módulo financeiro do escritório
 
-\- CRM
+- app mobile
 
-\- módulo financeiro do escritório
+- BI avançado
 
-\- app mobile
+- automação irrestrita de todo o e-CAC
 
-\- BI avançado
+- robôs pesados para todos os portais
 
-\- automação irrestrita de todo o e-CAC
+- cálculo tributário avançado completo
 
-\- robôs pesados para todos os portais
+- emissão massiva de obrigações fora do núcleo operacional
 
-\- cálculo tributário avançado completo
+- automações secundárias que não reduzam a varredura manual
 
-\- emissão massiva de obrigações fora do núcleo operacional
+---
 
-\- automações secundárias que não reduzam a varredura manual
-
-
-
-\---
-
-
-
-\## Entidades principais
+## Entidades principais
 
 A base estrutural da V1 deve considerar as seguintes entidades:
 
-
-
-\### Empresa
+### Empresa
 
 Representa cada cliente do escritório.
 
-
-
-\### ResponsavelInterno
+### ResponsavelInterno
 
 Representa o membro do time responsável pela empresa ou carteira.
 
-
-
-\### IntegracaoEmpresa
+### IntegracaoEmpresa
 
 Representa a situação de acesso, vínculo e disponibilidade de integração por empresa.
 
-
-
-\### Varredura
+### Varredura
 
 Representa cada execução automática ou manual de coleta de status.
 
-
-
-\### EventoOperacional
+### EventoOperacional
 
 Representa cada alteração relevante detectada na varredura.
 
-
-
-\### Pendencia
+### Pendencia
 
 Representa tudo o que exige ação humana.
 
-
-
-\### Parcelamento
+### Parcelamento
 
 Representa a situação consolidada de parcelamentos encontrados.
 
-
-
-\### DividaAtiva
+### DividaAtiva
 
 Representa a situação consolidada de dívida ativa encontrada.
 
-
-
-\### CompetenciaApuracao
+### CompetenciaApuracao
 
 Representa o ciclo operacional mensal da apuração por empresa.
 
-
-
-\### TarefaOperacional
+### TarefaOperacional
 
 Representa a ação manual necessária após uma pendência ou evento.
 
-
-
-\### Evidencia
+### Evidencia
 
 Representa arquivos, prints, logs, comprovantes ou registros anexados.
 
-
-
-\### UsuarioInterno
+### UsuarioInterno
 
 Representa quem utiliza o sistema dentro do escritório.
 
-
-
-\### LogExecucao
+### LogExecucao
 
 Representa o histórico técnico das rotinas executadas.
 
+---
 
-
-\---
-
-
-
-\## Fluxo principal do sistema
+## Fluxo principal do sistema
 
 O fluxo central da V1 deve funcionar assim:
 
-
-
-\*\*1. Varredura automática\*\*  
+**1. Varredura automática**
 
 O sistema percorre a carteira e coleta os dados disponíveis nas integrações e fluxos previstos.
 
-
-
-\*\*2. Geração de eventos\*\*  
+**2. Geração de eventos**
 
 Toda alteração relevante gera evento operacional.
 
-
-
-\*\*3. Classificação de criticidade\*\*  
+**3. Classificação de criticidade**
 
 Cada evento ou pendência recebe prioridade operacional.
 
-
-
-\*\*4. Fila de tratamento\*\*  
+**4. Fila de tratamento**
 
 As empresas entram em filas conforme risco, status e necessidade de ação.
 
-
-
-\*\*5. Tratamento humano\*\*  
+**5. Tratamento humano**
 
 O analista atua apenas onde houver necessidade real.
 
-
-
-\*\*6. Atualização de status\*\*  
+**6. Atualização de status**
 
 Após o tratamento, o sistema registra histórico, evidência e novo estado operacional.
 
-
-
-\*\*7. Organização da apuração\*\*  
+**7. Organização da apuração**
 
 A empresa segue para o fluxo mensal conforme sua situação fiscal e operacional.
 
+---
 
-
-\---
-
-
-
-\## Prioridade de implementação
+## Prioridade de implementação
 
 A construção da V1 deve seguir esta ordem:
 
+### Etapa 1. Base estrutural
 
+- repositório
 
-\### Etapa 1. Base estrutural
+- ambiente
 
-\- repositório
+- autenticação interna
 
-\- ambiente
+- cadastro de empresas
 
-\- autenticação interna
+- cadastro de usuários
 
-\- cadastro de empresas
+- estrutura mínima de banco
 
-\- cadastro de usuários
+- gestão de segredos
 
-\- estrutura mínima de banco
+- logs iniciais
 
-\- gestão de segredos
+### Etapa 2. Núcleo operacional
 
-\- logs iniciais
+- dashboard principal
 
+- controle de acessos e procurações
 
+- motor de varredura
 
-\### Etapa 2. Núcleo operacional
+- painel de pendências
 
-\- dashboard principal
+- histórico de execução
 
-\- controle de acessos e procurações
+### Etapa 3. Integrações prioritárias
 
-\- motor de varredura
+- integração com fontes prioritárias
 
-\- painel de pendências
+- leitura de parcelamentos
 
-\- histórico de execução
+- leitura de dívida ativa
 
+- normalização de retornos
 
+- classificação de eventos
 
-\### Etapa 3. Integrações prioritárias
+### Etapa 4. Organização da apuração
 
-\- integração com fontes prioritárias
+- workspace por competência
 
-\- leitura de parcelamentos
+- bloqueios operacionais
 
-\- leitura de dívida ativa
+- checklist por empresa
 
-\- normalização de retornos
+- fluxo de status da apuração
 
-\- classificação de eventos
+### Etapa 5. Alertas e refinamento
 
+- alertas automáticos
 
+- filtros operacionais
 
-\### Etapa 4. Organização da apuração
+- busca rápida
 
-\- workspace por competência
+- melhorias de usabilidade
 
-\- bloqueios operacionais
+- exportações simples quando necessárias
 
-\- checklist por empresa
+---
 
-\- fluxo de status da apuração
+## Início, meio e fim do projeto
 
-
-
-\### Etapa 5. Alertas e refinamento
-
-\- alertas automáticos
-
-\- filtros operacionais
-
-\- busca rápida
-
-\- melhorias de usabilidade
-
-\- exportações simples quando necessárias
-
-
-
-\---
-
-
-
-\## Início, meio e fim do projeto
-
-
-
-\### Início
+### Início
 
 Estruturar a base do sistema com:
 
+- cadastro da carteira
 
+- controle de procurações e acessos
 
-\- cadastro da carteira
+- dashboard principal
 
-\- controle de procurações e acessos
+- motor de varredura
 
-\- dashboard principal
+- painel de pendências
 
-\- motor de varredura
-
-\- painel de pendências
-
-
-
-\### Meio
+### Meio
 
 Conectar as integrações prioritárias e consolidar o núcleo operacional com:
 
+- leitura de parcelamentos
 
+- leitura de dívida ativa
 
-\- leitura de parcelamentos
+- classificação de criticidade
 
-\- leitura de dívida ativa
+- eventos operacionais
 
-\- classificação de criticidade
+- workspace de apuração mensal
 
-\- eventos operacionais
-
-\- workspace de apuração mensal
-
-
-
-\### Fim
+### Fim
 
 Concluir a V1 quando o sistema estiver operando como centro de controle da carteira, com:
 
+- fila de exceção funcionando
 
+- alertas operacionais ativos
 
-\- fila de exceção funcionando
+- histórico e auditoria confiáveis
 
-\- alertas operacionais ativos
+- tratamento das pendências centralizado
 
-\- histórico e auditoria confiáveis
+- apuração mensal organizada por status e prioridade
 
-\- tratamento das pendências centralizado
+---
 
-\- apuração mensal organizada por status e prioridade
-
-
-
-\---
-
-
-
-\## Critério de sucesso da V1
+## Critério de sucesso da V1
 
 A V1 será considerada bem-sucedida quando:
 
+- reduzir significativamente a varredura manual da carteira
 
+- reduzir acessos repetitivos a portais
 
-\- reduzir significativamente a varredura manual da carteira
+- permitir identificar pendências mais cedo
 
-\- reduzir acessos repetitivos a portais
+- reduzir retrabalho operacional
 
-\- permitir identificar pendências mais cedo
+- concentrar o time nas empresas com evento real
 
-\- reduzir retrabalho operacional
+- dar visibilidade clara da situação de cada empresa
 
-\- concentrar o time nas empresas com evento real
+- organizar a apuração mensal de forma centralizada
 
-\- dar visibilidade clara da situação de cada empresa
+- manter histórico e rastreabilidade suficientes para operação confiável
 
-\- organizar a apuração mensal de forma centralizada
+---
 
-\- manter histórico e rastreabilidade suficientes para operação confiável
-
-
-
-\---
-
-
-
-\## Regra de foco da V1
+## Regra de foco da V1
 
 Toda funcionalidade nova deve responder a esta pergunta:
 
-
-
-\*\*Isso reduz trabalho manual recorrente, melhora priorização operacional ou aumenta confiabilidade da apuração?\*\*
-
-
+**Isso reduz trabalho manual recorrente, melhora priorização operacional ou aumenta confiabilidade da apuração?**
 
 Se a resposta for não, não entra na V1.
 
+---
 
+## Definição final da V1
 
-\---
+A V1 do ECAC AUTOMAÇÃO é um **hub operacional fiscal interno**, focado em:
 
+- leitura e consolidação de status
 
+- monitoramento da carteira
 
-\## Definição final da V1
+- geração de fila de exceção
 
-A V1 do ECAC AUTOMAÇÃO é um \*\*hub operacional fiscal interno\*\*, focado em:
+- tratamento organizado de pendências
 
-
-
-\- leitura e consolidação de status
-
-\- monitoramento da carteira
-
-\- geração de fila de exceção
-
-\- tratamento organizado de pendências
-
-\- apoio direto à apuração mensal
-
-
+- apoio direto à apuração mensal
 
 A V1 não é um ERP.
 
@@ -742,13 +566,8 @@ A V1 não é um sistema genérico.
 
 A V1 é uma ferramenta de escala operacional para o escritório.
 
+---
 
-
-\---
-
-
-
-\## Observação de condução do projeto
+## Observação de condução do projeto
 
 Este projeto deve ser conduzido com escopo controlado, sem expansão prematura e sem adicionar módulos que não tenham impacto direto no ganho operacional da carteira atendida.
-
