@@ -50,9 +50,9 @@ CREATE TABLE "Empresa" (
     "razaoSocial" TEXT NOT NULL,
     "nomeFantasia" TEXT,
     "regimeTributario" "RegimeTributario" NOT NULL,
-    "responsavelInternoId" TEXT NOT NULL,
-    "statusAcesso" "StatusAcessoEmpresa" NOT NULL,
-    "statusProcuracao" "StatusProcuracaoEmpresa" NOT NULL,
+    "responsavelInternoId" TEXT,
+    "statusAcesso" "StatusAcessoEmpresa" NOT NULL DEFAULT 'NAO_VERIFICADO',
+    "statusProcuracao" "StatusProcuracaoEmpresa" NOT NULL DEFAULT 'NAO_VERIFICADA',
     "observacoesOperacionais" TEXT,
     "ultimaVarreduraEm" TIMESTAMP(3),
     "ultimoEventoRelevanteEm" TIMESTAMP(3),
@@ -104,4 +104,3 @@ ALTER TABLE "Empresa" ADD CONSTRAINT "Empresa_responsavelInternoId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "IntegracaoEmpresa" ADD CONSTRAINT "IntegracaoEmpresa_empresaId_fkey" FOREIGN KEY ("empresaId") REFERENCES "Empresa"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-

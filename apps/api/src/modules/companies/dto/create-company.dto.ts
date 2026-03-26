@@ -45,7 +45,7 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  responsavelInternoId!: string;
+  responsavelInternoId?: string;
 
   @IsOptional()
   @IsEnum(StatusAcessoEmpresa)

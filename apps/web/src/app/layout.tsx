@@ -1,14 +1,8 @@
-import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
+import type * as React from 'react';
 
 import './globals.css';
 
-export const metadata: Metadata = {
-  title: 'ECAC Automacao',
-  description: 'Base do monorepo ECAC Automacao'
-};
-
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>{children}</body>

@@ -1,9 +1,7 @@
-export default function HomePage() {
+export default function Page() {
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <h1 className="text-3xl font-semibold text-slate-900">
-        ECAC Automacao
-      </h1>
+    <main>
+      <h1>ECAC Automação</h1>
     </main>
-  );
+  )
 }
