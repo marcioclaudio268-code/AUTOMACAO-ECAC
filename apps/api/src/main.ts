@@ -1,13 +1,21 @@
-import { Logger } from '@nestjs/common';
+import 'reflect-metadata';
+
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
 import { logger } from './common/utils/logger';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true
-  });
+  const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      forbidNonWhitelisted: true,
+      transform: true,
+      whitelist: true
+    })
+  );
 
   app.enableShutdownHooks();
 
@@ -15,7 +23,6 @@ async function bootstrap(): Promise<void> {
   await app.listen(port);
 
   logger.info({ port }, 'API started');
-  Logger.log(`API listening on http://localhost:${port}`, 'Bootstrap');
 }
 
 bootstrap().catch((error: unknown) => {

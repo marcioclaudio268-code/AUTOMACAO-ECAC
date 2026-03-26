@@ -10,6 +10,9 @@
     "dev:web": "pnpm --filter @ecac/web dev",
     "dev:api": "pnpm --filter @ecac/api dev",
     "dev": "pnpm -r --parallel --filter @ecac/web --filter @ecac/api dev",
+    "db:generate": "pnpm --filter @ecac/api prisma:generate",
+    "db:migrate": "pnpm --filter @ecac/api db:migrate",
+    "db:seed": "pnpm --filter @ecac/api db:seed",
     "build": "pnpm -r --if-present build",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test"

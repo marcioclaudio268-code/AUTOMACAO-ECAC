@@ -1,4 +1,12 @@
 import { Module } from '@nestjs/common';
 
-@Module({})
+import { CompaniesController } from './companies.controller';
+import { CompaniesService } from './companies.service';
+
+@Module({
+  controllers: [CompaniesController],
+  providers: [CompaniesService],
+  exports: [CompaniesService]
+})
 export class CompaniesModule {}
+

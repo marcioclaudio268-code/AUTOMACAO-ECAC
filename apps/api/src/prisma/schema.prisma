@@ -6,3 +6,105 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum PerfilUsuario {
+  ADMIN
+  OPERACIONAL
+}
+
+enum StatusAcessoEmpresa {
+  DISPONIVEL
+  INDISPONIVEL
+  BLOQUEADO
+  NAO_VERIFICADO
+}
+
+enum StatusProcuracaoEmpresa {
+  VALIDA
+  INVALIDA
+  PENDENTE
+  NAO_VERIFICADA
+}
+
+enum TipoIntegracao {
+  MANUAL
+  API
+  RPA
+}
+
+enum StatusIntegracao {
+  ATIVA
+  INATIVA
+  ERRO
+  NAO_CONFIGURADA
+}
+
+enum RegimeTributario {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+  OUTRO
+}
+
+model UsuarioInterno {
+  id           String               @id @default(cuid())
+  nome         String
+  email        String               @unique
+  senhaHash    String
+  perfil       PerfilUsuario
+  ativo        Boolean              @default(true)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  responsaveis  ResponsavelInterno[]
+}
+
+model ResponsavelInterno {
+  id               String          @id @default(cuid())
+  nome             String
+  email            String          @unique
+  usuarioInternoId String
+  usuarioInterno   UsuarioInterno  @relation(fields: [usuarioInternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  ativo           Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  empresas        Empresa[]
+
+  @@index([usuarioInternoId])
+}
+
+model Empresa {
+  id                      String               @id @default(cuid())
+  cnpj                    String               @unique
+  razaoSocial             String
+  nomeFantasia            String?
+  regimeTributario        RegimeTributario
+  responsavelInternoId    String
+  responsavelInterno      ResponsavelInterno    @relation(fields: [responsavelInternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  statusAcesso            StatusAcessoEmpresa
+  statusProcuracao        StatusProcuracaoEmpresa
+  observacoesOperacionais String?               @db.Text
+  ultimaVarreduraEm       DateTime?
+  ultimoEventoRelevanteEm DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  integracoes             IntegracaoEmpresa[]
+
+  @@index([responsavelInternoId])
+}
+
+model IntegracaoEmpresa {
+  id                String          @id @default(cuid())
+  empresaId         String
+  empresa           Empresa         @relation(fields: [empresaId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  tipoIntegracao    TipoIntegracao
+  statusIntegracao  StatusIntegracao
+  ultimoSucessoEm   DateTime?
+  ultimoErroEm      DateTime?
+  mensagemErroAtual String?         @db.Text
+  observacoes       String?         @db.Text
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([empresaId])
+}
+

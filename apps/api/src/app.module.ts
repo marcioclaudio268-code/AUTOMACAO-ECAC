@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
 import { AppController } from './app.controller';
+import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { CompetenciasModule } from './modules/competencias/competencias.module';
@@ -38,6 +39,7 @@ const featureModules = [
       envFilePath: ['../../.env.local', '../../.env'],
       isGlobal: true
     }),
+    PrismaModule,
     ...featureModules
   ],
   controllers: [AppController]
