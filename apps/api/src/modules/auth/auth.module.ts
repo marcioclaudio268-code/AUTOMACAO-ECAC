@@ -22,6 +22,7 @@ import { AuthService } from './services/auth.service';
     })
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtCookieAuthGuard]
+  providers: [AuthService, JwtCookieAuthGuard],
+  exports: [AuthService, JwtCookieAuthGuard]
 })
 export class AuthModule {}

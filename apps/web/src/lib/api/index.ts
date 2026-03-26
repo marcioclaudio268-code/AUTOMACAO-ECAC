@@ -103,7 +103,7 @@ export type CompanyCreateInput = {
   observacoesOperacionais?: string | undefined;
   razaoSocial: string;
   regimeTributario: RegimeTributario;
-  responsavelInternoId?: string | undefined;
+  responsavelInternoId?: string | null | undefined;
   statusAcesso?: StatusAcessoEmpresa | undefined;
   statusProcuracao?: StatusProcuracaoEmpresa | undefined;
 };

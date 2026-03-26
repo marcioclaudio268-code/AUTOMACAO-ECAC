@@ -1,9 +1,19 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards
+} from '@nestjs/common';
 
+import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { CreateResponsavelDto } from './dto/create-responsavel.dto';
 import { UpdateResponsavelDto } from './dto/update-responsavel.dto';
 import { ResponsaveisService } from './responsaveis.service';
 
+@UseGuards(JwtCookieAuthGuard)
 @Controller('responsaveis')
 export class ResponsaveisController {
   constructor(private readonly responsaveisService: ResponsaveisService) {}

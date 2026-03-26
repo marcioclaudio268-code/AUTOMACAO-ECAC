@@ -40,12 +40,12 @@ export class CreateCompanyDto {
   regimeTributario!: RegimeTributario;
 
   @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() : value
+    typeof value === 'string' ? value.trim() || null : value
   )
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  responsavelInternoId?: string;
+  responsavelInternoId?: string | null;
 
   @IsOptional()
   @IsEnum(StatusAcessoEmpresa)

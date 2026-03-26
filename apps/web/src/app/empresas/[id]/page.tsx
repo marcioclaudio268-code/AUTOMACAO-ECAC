@@ -54,7 +54,7 @@ function buildPayload(form: CompanyFormState): CompanyCreateInput {
     observacoesOperacionais: form.observacoesOperacionais.trim() || undefined,
     razaoSocial: form.razaoSocial.trim(),
     regimeTributario: form.regimeTributario,
-    responsavelInternoId: form.responsavelInternoId.trim() || undefined,
+    responsavelInternoId: form.responsavelInternoId.trim() || null,
     statusAcesso: form.statusAcesso,
     statusProcuracao: form.statusProcuracao
   };
@@ -232,6 +232,12 @@ export default function CompanyDetailPage() {
               href="/empresas"
             >
               Voltar
+            </Link>
+            <Link
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
+              href="/responsaveis"
+            >
+              Responsaveis
             </Link>
             <button
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"

@@ -54,9 +54,12 @@ export class CompaniesService {
 
   async create(dto: CreateCompanyDto) {
     const cnpj = this.parseAndValidateCnpj(dto.cnpj);
+    const responsavelInternoId = this.normalizeResponsavelInternoId(
+      dto.responsavelInternoId
+    );
 
-    if (dto.responsavelInternoId !== undefined) {
-      await this.assertResponsavelExists(dto.responsavelInternoId);
+    if (responsavelInternoId) {
+      await this.assertResponsavelExists(responsavelInternoId);
     }
     await this.assertCnpjAvailable(cnpj);
 
@@ -72,10 +75,10 @@ export class CompaniesService {
         dto.statusProcuracao ?? StatusProcuracaoEmpresa.NAO_VERIFICADA
     };
 
-    if (dto.responsavelInternoId !== undefined) {
+    if (responsavelInternoId) {
       data.responsavelInterno = {
         connect: {
-          id: dto.responsavelInternoId
+          id: responsavelInternoId
         }
       };
     }
@@ -112,6 +115,9 @@ export class CompaniesService {
 
   async update(id: string, dto: UpdateCompanyDto) {
     await this.assertCompanyExists(id);
+    const responsavelInternoId = this.normalizeResponsavelInternoId(
+      dto.responsavelInternoId
+    );
 
     const data: Prisma.EmpresaUpdateInput = {};
 
@@ -134,12 +140,18 @@ export class CompaniesService {
     }
 
     if (dto.responsavelInternoId !== undefined) {
-      await this.assertResponsavelExists(dto.responsavelInternoId);
-      data.responsavelInterno = {
-        connect: {
-          id: dto.responsavelInternoId
-        }
-      };
+      if (responsavelInternoId) {
+        await this.assertResponsavelExists(responsavelInternoId);
+        data.responsavelInterno = {
+          connect: {
+            id: responsavelInternoId
+          }
+        };
+      } else {
+        data.responsavelInterno = {
+          disconnect: true
+        };
+      }
     }
 
     if (dto.statusAcesso !== undefined) {
@@ -175,6 +187,17 @@ export class CompaniesService {
     }
 
     return cnpj;
+  }
+
+  private normalizeResponsavelInternoId(
+    value: string | null | undefined
+  ): string | null | undefined {
+    if (value === undefined || value === null) {
+      return value;
+    }
+
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
   }
 
   private async assertCompanyExists(id: string): Promise<void> {
