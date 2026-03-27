@@ -25,17 +25,35 @@ import { formatCnpj, formatDateTime } from '@/lib/formatters';
 const SEM_RESPONSAVEL_FILTER = '__sem_responsavel__';
 
 type PendenciasFilterState = {
+  empresaId: string;
   responsavelInternoId: string;
   tipoPendencia: PendenciaTipo | '';
 };
 
 const initialFilters: PendenciasFilterState = {
+  empresaId: '',
   responsavelInternoId: '',
   tipoPendencia: ''
 };
 
+function parseFiltersFromSearch(search: string): PendenciasFilterState {
+  const params = new URLSearchParams(search);
+  const tipoPendencia = params.get('tipoPendencia');
+
+  return {
+    empresaId: params.get('empresaId')?.trim() || '',
+    responsavelInternoId: params.get('responsavelInternoId')?.trim() || '',
+    tipoPendencia: PENDENCIA_TIPO_OPTIONS.some(
+      (option) => option.value === tipoPendencia
+    )
+      ? (tipoPendencia as PendenciaTipo)
+      : ''
+  };
+}
+
 function buildQueryFilters(filters: PendenciasFilterState) {
   return {
+    empresaId: filters.empresaId.trim() || undefined,
     responsavelInternoId: filters.responsavelInternoId.trim() || undefined,
     tipoPendencia: filters.tipoPendencia || undefined
   };
@@ -149,7 +167,7 @@ function PendenciaCard({ item }: { item: PendenciaListItem }) {
             className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
             href={item.linkTratamento}
           >
-            Tratar empresa
+            Abrir tratamento
           </Link>
         </div>
       </div>
@@ -176,9 +194,10 @@ export default function PendenciasPage() {
     async function load() {
       try {
         await requireSession();
+        const queryFilters = parseFiltersFromSearch(window.location.search);
 
         const [pendenciasItems, responsaveisItems] = await Promise.all([
-          listPendencias(),
+          listPendencias(buildQueryFilters(queryFilters)),
           listResponsaveis()
         ]);
 
@@ -186,6 +205,7 @@ export default function PendenciasPage() {
           return;
         }
 
+        setFilters(queryFilters);
         setPendencias(pendenciasItems);
         setResponsaveis(responsaveisItems);
       } catch (loadError) {
@@ -264,6 +284,7 @@ export default function PendenciasPage() {
 
   async function handleClearFilters() {
     setFilters(initialFilters);
+    router.replace('/pendencias');
     await refreshPendencias(initialFilters);
   }
 
@@ -293,7 +314,7 @@ export default function PendenciasPage() {
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-600">
               Varredura sincronica executada sob demanda a partir dos dados ja
-              persistidos na carteira.
+              persistidos na carteira. O tratamento manual acontece na empresa.
             </p>
           </div>
 
@@ -443,6 +464,13 @@ export default function PendenciasPage() {
                 Limpar filtros
               </button>
             </div>
+
+            {filters.empresaId ? (
+              <p className="text-sm text-slate-600">
+                Filtro de empresa ativo. O painel mostra apenas itens da
+                empresa aberta.
+              </p>
+            ) : null}
           </form>
         </section>
 
@@ -462,8 +490,8 @@ export default function PendenciasPage() {
                 Lista de pendencias
               </h2>
               <p className="text-sm text-slate-600">
-                Cada item abre a edicao da empresa para tratamento no fluxo ja
-                existente.
+                Cada item abre a empresa para tratar acesso, procuracao e
+                pendencia operacional no fluxo ja existente.
               </p>
             </div>
             <p className="text-sm text-slate-500">
