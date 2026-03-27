@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, StatusAcessoEmpresa, StatusProcuracaoEmpresa } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
+import {
+  NON_REGULAR_ACCESS_STATUSES,
+  NON_REGULAR_PROCURACAO_STATUSES
+} from '../../common/utils';
 import { PrismaService } from '../../prisma/prisma.service';
 
 type DashboardResponsavelResumo = {
@@ -19,18 +23,6 @@ export type DashboardSummary = {
     totalEmpresasComProcuracaoPendente: number;
   };
 };
-
-const accessAttentionStatuses: StatusAcessoEmpresa[] = [
-  StatusAcessoEmpresa.BLOQUEADO,
-  StatusAcessoEmpresa.INDISPONIVEL,
-  StatusAcessoEmpresa.NAO_VERIFICADO
-];
-
-const procuracaoAttentionStatuses: StatusProcuracaoEmpresa[] = [
-  StatusProcuracaoEmpresa.INVALIDA,
-  StatusProcuracaoEmpresa.NAO_VERIFICADA,
-  StatusProcuracaoEmpresa.PENDENTE
-];
 
 @Injectable()
 export class DashboardService {
@@ -61,7 +53,7 @@ export class DashboardService {
         where: {
           ...carteiraWhere,
           statusAcesso: {
-            in: accessAttentionStatuses
+            in: NON_REGULAR_ACCESS_STATUSES
           }
         }
       }),
@@ -69,7 +61,7 @@ export class DashboardService {
         where: {
           ...carteiraWhere,
           statusProcuracao: {
-            in: procuracaoAttentionStatuses
+            in: NON_REGULAR_PROCURACAO_STATUSES
           }
         }
       }),
