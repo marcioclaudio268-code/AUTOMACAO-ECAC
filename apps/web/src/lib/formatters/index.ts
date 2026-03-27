@@ -27,3 +27,22 @@ export function formatDateTime(value: string | null | undefined): string {
     timeStyle: 'short'
   }).format(date);
 }
+
+export function toDateTimeLocalValue(
+  value: string | null | undefined
+): string {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const timezoneOffset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - timezoneOffset)
+    .toISOString()
+    .slice(0, 16);
+}

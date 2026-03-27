@@ -68,7 +68,11 @@ export class CompaniesService {
       cnpj,
       nomeFantasia: dto.nomeFantasia?.trim() || null,
       naCarteira: dto.naCarteira ?? false,
+      pendenciaOperacional: dto.pendenciaOperacional ?? false,
       observacoesOperacionais: dto.observacoesOperacionais?.trim() || null,
+      ultimaConferenciaOperacionalEm:
+        this.normalizeDate(dto.ultimaConferenciaOperacionalEm) ?? null,
+      regularizadaEm: this.normalizeDate(dto.regularizadaEm) ?? null,
       razaoSocial: dto.razaoSocial.trim(),
       regimeTributario: dto.regimeTributario,
       statusAcesso:
@@ -96,6 +100,10 @@ export class CompaniesService {
 
     if (query.naCarteira !== undefined) {
       where.naCarteira = query.naCarteira;
+    }
+
+    if (query.pendenciaOperacional !== undefined) {
+      where.pendenciaOperacional = query.pendenciaOperacional;
     }
 
     if (query.responsavelInternoId) {
@@ -164,6 +172,28 @@ export class CompaniesService {
       data.naCarteira = dto.naCarteira;
     }
 
+    if (dto.pendenciaOperacional !== undefined) {
+      data.pendenciaOperacional = dto.pendenciaOperacional;
+    }
+
+    if (dto.ultimaConferenciaOperacionalEm !== undefined) {
+      const ultimaConferenciaOperacionalEm = this.normalizeDate(
+        dto.ultimaConferenciaOperacionalEm
+      );
+
+      if (ultimaConferenciaOperacionalEm !== undefined) {
+        data.ultimaConferenciaOperacionalEm = ultimaConferenciaOperacionalEm;
+      }
+    }
+
+    if (dto.regularizadaEm !== undefined) {
+      const regularizadaEm = this.normalizeDate(dto.regularizadaEm);
+
+      if (regularizadaEm !== undefined) {
+        data.regularizadaEm = regularizadaEm;
+      }
+    }
+
     if (dto.responsavelInternoId !== undefined) {
       if (responsavelInternoId) {
         await this.assertResponsavelExists(responsavelInternoId);
@@ -223,6 +253,22 @@ export class CompaniesService {
 
     const normalized = value.trim();
     return normalized.length > 0 ? normalized : null;
+  }
+
+  private normalizeDate(
+    value: string | null | undefined
+  ): Date | null | undefined {
+    if (value === undefined || value === null) {
+      return value;
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException('Data invalida.');
+    }
+
+    return date;
   }
 
   private async assertCompanyExists(id: string): Promise<void> {

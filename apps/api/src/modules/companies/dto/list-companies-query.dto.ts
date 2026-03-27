@@ -42,6 +42,11 @@ export class ListCompaniesQueryDto {
   @IsBoolean()
   naCarteira?: boolean;
 
+  @Transform(({ value }) => parseOptionalBoolean(value))
+  @IsOptional()
+  @IsBoolean()
+  pendenciaOperacional?: boolean;
+
   @Transform(({ value }) => parseOptionalText(value))
   @IsOptional()
   @IsString()

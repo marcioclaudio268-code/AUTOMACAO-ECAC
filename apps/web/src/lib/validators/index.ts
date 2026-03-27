@@ -10,6 +10,7 @@ type ResponsavelFormInput = {
 
 type CompanyFormInput = {
   cnpj: string;
+  ultimaConferenciaOperacionalEm?: string;
   razaoSocial: string;
   responsavelInternoId: string;
 };
@@ -86,6 +87,16 @@ export function validateCompanyForm(
     !responsaveis.some((responsavel) => responsavel.id === responsavelInternoId)
   ) {
     return 'Selecione um responsavel existente.';
+  }
+
+  const ultimaConferenciaOperacionalEm =
+    form.ultimaConferenciaOperacionalEm?.trim();
+
+  if (
+    ultimaConferenciaOperacionalEm &&
+    Number.isNaN(new Date(ultimaConferenciaOperacionalEm).getTime())
+  ) {
+    return 'Informe uma data de conferencia valida.';
   }
 
   return null;

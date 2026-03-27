@@ -64,6 +64,7 @@ export type CompanyBase = {
   createdAt: string;
   id: string;
   naCarteira: boolean;
+  pendenciaOperacional: boolean;
   nomeFantasia: string | null;
   observacoesOperacionais: string | null;
   razaoSocial: string;
@@ -71,6 +72,8 @@ export type CompanyBase = {
   responsavelInternoId: string | null;
   statusAcesso: StatusAcessoEmpresa;
   statusProcuracao: StatusProcuracaoEmpresa;
+  ultimaConferenciaOperacionalEm: string | null;
+  regularizadaEm: string | null;
   ultimaVarreduraEm: string | null;
   ultimoEventoRelevanteEm: string | null;
   updatedAt: string;
@@ -108,12 +111,16 @@ export type CompanyCreateInput = {
   responsavelInternoId?: string | null | undefined;
   statusAcesso?: StatusAcessoEmpresa | undefined;
   statusProcuracao?: StatusProcuracaoEmpresa | undefined;
+  pendenciaOperacional?: boolean | undefined;
+  regularizadaEm?: string | null | undefined;
+  ultimaConferenciaOperacionalEm?: string | null | undefined;
 };
 
 export type CompanyUpdateInput = Partial<CompanyCreateInput>;
 
 export type CompanyListFilters = {
   naCarteira?: boolean | undefined;
+  pendenciaOperacional?: boolean | undefined;
   responsavelInternoId?: string | undefined;
   statusAcesso?: StatusAcessoEmpresa | undefined;
   statusProcuracao?: StatusProcuracaoEmpresa | undefined;
@@ -273,6 +280,11 @@ export async function listCompanies(
   const params = new URLSearchParams();
 
   appendQueryParam(params, 'naCarteira', filters.naCarteira);
+  appendQueryParam(
+    params,
+    'pendenciaOperacional',
+    filters.pendenciaOperacional
+  );
   appendQueryParam(
     params,
     'responsavelInternoId',

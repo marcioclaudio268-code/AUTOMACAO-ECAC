@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -62,6 +63,28 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsBoolean()
   naCarteira?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pendenciaOperacional?: boolean;
+
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() || null : value
+  )
+  @IsOptional()
+  @IsDateString({}, {
+    message: 'ultimaConferenciaOperacionalEm invalida.'
+  })
+  ultimaConferenciaOperacionalEm?: string | null;
+
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() || null : value
+  )
+  @IsOptional()
+  @IsDateString({}, {
+    message: 'regularizadaEm invalida.'
+  })
+  regularizadaEm?: string | null;
 
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value

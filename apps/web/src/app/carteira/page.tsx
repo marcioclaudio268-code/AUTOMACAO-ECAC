@@ -8,6 +8,8 @@ import {
   listCarteira,
   listResponsaveis,
   updateCompany,
+  type CompanyUpdateInput,
+  type CompanyDetailItem,
   type CompanyListItem,
   type ResponsavelInternoRecord,
   type StatusAcessoEmpresa,
@@ -20,25 +22,93 @@ import {
   STATUS_PROCURACAO_LABELS,
   STATUS_PROCURACAO_OPTIONS
 } from '@/lib/constants';
-import { formatCnpj } from '@/lib/formatters';
+import { formatCnpj, formatDateTime } from '@/lib/formatters';
 
 type CarteiraFilterState = {
   responsavelInternoId: string;
   statusAcesso: StatusAcessoEmpresa | '';
   statusProcuracao: StatusProcuracaoEmpresa | '';
+  pendenciaOperacional: '' | 'true' | 'false';
 };
 
 const initialFilters: CarteiraFilterState = {
   responsavelInternoId: '',
   statusAcesso: '',
-  statusProcuracao: ''
+  statusProcuracao: '',
+  pendenciaOperacional: ''
 };
 
 function buildQueryFilters(filters: CarteiraFilterState) {
   return {
     responsavelInternoId: filters.responsavelInternoId.trim() || undefined,
+    pendenciaOperacional:
+      filters.pendenciaOperacional === ''
+        ? undefined
+        : filters.pendenciaOperacional === 'true',
     statusAcesso: filters.statusAcesso || undefined,
     statusProcuracao: filters.statusProcuracao || undefined
+  };
+}
+
+function matchesCarteiraFilters(
+  company: CompanyListItem,
+  filters: CarteiraFilterState
+) {
+  if (
+    filters.responsavelInternoId &&
+    company.responsavelInternoId !== filters.responsavelInternoId
+  ) {
+    return false;
+  }
+
+  if (filters.statusAcesso && company.statusAcesso !== filters.statusAcesso) {
+    return false;
+  }
+
+  if (
+    filters.statusProcuracao &&
+    company.statusProcuracao !== filters.statusProcuracao
+  ) {
+    return false;
+  }
+
+  if (filters.pendenciaOperacional !== '') {
+    const expectedPending = filters.pendenciaOperacional === 'true';
+
+    if (company.pendenciaOperacional !== expectedPending) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function upsertCarteiraItem(
+  current: CompanyListItem[],
+  updated: CompanyListItem,
+  filters: CarteiraFilterState
+) {
+  if (!matchesCarteiraFilters(updated, filters)) {
+    return current.filter((item) => item.id !== updated.id);
+  }
+
+  return current.map((item) => (item.id === updated.id ? updated : item));
+}
+
+function toCarteiraItem(company: CompanyDetailItem): CompanyListItem {
+  const { integracoes: _integracoes, responsavelInterno, ...base } = company;
+
+  return {
+    ...base,
+    responsavelInterno: responsavelInterno
+      ? {
+          ativo: responsavelInterno.ativo,
+          email: responsavelInterno.email,
+          id: responsavelInterno.id,
+          nome: responsavelInterno.nome,
+          usuarioInternoId: responsavelInterno.usuarioInterno.id
+        }
+      : null
   };
 }
 
@@ -57,7 +127,8 @@ export default function CarteiraPage() {
   const [filters, setFilters] = useState<CarteiraFilterState>(initialFilters);
   const [loading, setLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
-  const [isRemovingId, setIsRemovingId] = useState('');
+  const [isMutatingId, setIsMutatingId] = useState('');
+  const [isMutatingAction, setIsMutatingAction] = useState('');
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -160,33 +231,86 @@ export default function CarteiraPage() {
     await refreshCarteira(initialFilters);
   }
 
-  async function handleRemove(company: CompanyListItem) {
-    if (isRemovingId) {
+  async function mutateCompany(
+    company: CompanyListItem,
+    action: string,
+    payload: CompanyUpdateInput,
+    successMessage: string,
+    removeFromList = false
+  ) {
+    if (isMutatingId) {
       return;
     }
 
     setError('');
     setMessage('');
-    setIsRemovingId(company.id);
+    setIsMutatingId(company.id);
+    setIsMutatingAction(action);
 
     try {
-      await updateCompany(company.id, {
-        naCarteira: false
-      });
+      const updated = await updateCompany(company.id, payload);
 
       setCarteira((current) =>
-        current.filter((item) => item.id !== company.id)
+        removeFromList
+          ? current.filter((item) => item.id !== company.id)
+          : upsertCarteiraItem(current, toCarteiraItem(updated), filters)
       );
-      setMessage('Empresa retirada da carteira.');
+      setMessage(successMessage);
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
-          : 'Falha ao retirar empresa da carteira.'
+          : 'Falha ao atualizar empresa.'
       );
     } finally {
-      setIsRemovingId('');
+      setIsMutatingId('');
+      setIsMutatingAction('');
     }
+  }
+
+  async function handleStampConference(company: CompanyListItem) {
+    await mutateCompany(
+      company,
+      'conference',
+      {
+        ultimaConferenciaOperacionalEm: new Date().toISOString()
+      },
+      'Conferencia operacional registrada.'
+    );
+  }
+
+  async function handleTogglePendencia(company: CompanyListItem) {
+    const now = new Date().toISOString();
+
+    await mutateCompany(
+      company,
+      company.pendenciaOperacional ? 'regularize' : 'pending',
+      company.pendenciaOperacional
+        ? {
+            pendenciaOperacional: false,
+            regularizadaEm: now,
+            ultimaConferenciaOperacionalEm: now
+          }
+        : {
+            pendenciaOperacional: true,
+            ultimaConferenciaOperacionalEm: now
+          },
+      company.pendenciaOperacional
+        ? 'Empresa regularizada.'
+        : 'Pendencia operacional registrada.'
+    );
+  }
+
+  async function handleRemove(company: CompanyListItem) {
+    await mutateCompany(
+      company,
+      'remove',
+      {
+        naCarteira: false
+      },
+      'Empresa retirada da carteira.',
+      true
+    );
   }
 
   if (loading) {
@@ -209,7 +333,8 @@ export default function CarteiraPage() {
               Carteira operacional
             </h1>
             <p className="text-sm text-slate-600">
-              Lista das empresas em acompanhamento operacional.
+              Lista das empresas em acompanhamento operacional com controle de
+              acesso, procuracao e pendencia manual.
             </p>
           </div>
 
@@ -245,27 +370,28 @@ export default function CarteiraPage() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">
-                Empresas na carteira
-              </h2>
-              <p className="text-sm text-slate-600">
-                Filtre por responsavel ou status manual de acesso e procuracao.
-              </p>
-            </div>
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Empresas na carteira
+                </h2>
+                <p className="text-sm text-slate-600">
+                Filtre por responsavel, status manual, conferencia e pendencia.
+                </p>
+              </div>
             <p className="text-sm text-slate-500">
               {carteira.length} empresa(s) listada(s)
             </p>
           </div>
 
           <form className="mb-5" onSubmit={handleFilterSubmit}>
-            <fieldset className="grid gap-4 md:grid-cols-3" disabled={isFiltering}>
+            <fieldset className="grid gap-4 md:grid-cols-4" disabled={isFiltering}>
               <label className="space-y-2">
                 <span className="block text-sm font-medium text-slate-700">
                   Responsavel interno
                 </span>
                 <select
                   className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                  name="responsavelInternoId"
                   value={filters.responsavelInternoId}
                   onChange={(event) =>
                     setFilters((current) => ({
@@ -280,6 +406,30 @@ export default function CarteiraPage() {
                       {formatResponsavelOption(responsavel)}
                     </option>
                   ))}
+                  </select>
+                </label>
+
+              <label className="space-y-2">
+                <span className="block text-sm font-medium text-slate-700">
+                  Pendencia operacional
+                </span>
+                <select
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                  name="pendenciaOperacional"
+                  value={filters.pendenciaOperacional}
+                  onChange={(event) =>
+                    setFilters((current) => ({
+                      ...current,
+                      pendenciaOperacional: event.target.value as
+                        | ''
+                        | 'true'
+                        | 'false'
+                    }))
+                  }
+                >
+                  <option value="">Todas</option>
+                  <option value="true">Somente pendentes</option>
+                  <option value="false">Somente regularizadas</option>
                 </select>
               </label>
 
@@ -289,6 +439,7 @@ export default function CarteiraPage() {
                 </span>
                 <select
                   className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                  name="statusAcesso"
                   value={filters.statusAcesso}
                   onChange={(event) =>
                     setFilters((current) => ({
@@ -314,6 +465,7 @@ export default function CarteiraPage() {
                 </span>
                 <select
                   className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                  name="statusProcuracao"
                   value={filters.statusProcuracao}
                   onChange={(event) =>
                     setFilters((current) => ({
@@ -385,6 +537,9 @@ export default function CarteiraPage() {
                     <th className="px-3 py-3 font-medium">Responsavel</th>
                     <th className="px-3 py-3 font-medium">Acesso</th>
                     <th className="px-3 py-3 font-medium">Procuracao</th>
+                    <th className="px-3 py-3 font-medium">Conferencia</th>
+                    <th className="px-3 py-3 font-medium">Pendencia</th>
+                    <th className="px-3 py-3 font-medium">Regularizacao</th>
                     <th className="px-3 py-3 font-medium">Observacoes</th>
                     <th className="px-3 py-3 font-medium">Acoes</th>
                   </tr>
@@ -415,10 +570,46 @@ export default function CarteiraPage() {
                         {STATUS_PROCURACAO_LABELS[company.statusProcuracao]}
                       </td>
                       <td className="px-3 py-4 text-slate-700">
+                        {formatDateTime(company.ultimaConferenciaOperacionalEm)}
+                      </td>
+                      <td className="px-3 py-4 text-slate-700">
+                        {company.pendenciaOperacional ? 'Pendente' : 'Regular'}
+                      </td>
+                      <td className="px-3 py-4 text-slate-700">
+                        {formatDateTime(company.regularizadaEm)}
+                      </td>
+                      <td className="px-3 py-4 text-slate-700">
                         {company.observacoesOperacionais?.trim() || '-'}
                       </td>
                       <td className="px-3 py-4">
                         <div className="flex flex-wrap gap-2">
+                          <button
+                            className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-900 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={isMutatingId === company.id}
+                            onClick={() => void handleStampConference(company)}
+                            type="button"
+                          >
+                            {isMutatingId === company.id &&
+                            isMutatingAction === 'conference'
+                              ? 'Conferindo...'
+                              : 'Conferir agora'}
+                          </button>
+                          <button
+                            className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-900 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                            disabled={isMutatingId === company.id}
+                            onClick={() => void handleTogglePendencia(company)}
+                            type="button"
+                          >
+                            {isMutatingId === company.id &&
+                            (isMutatingAction === 'pending' ||
+                              isMutatingAction === 'regularize')
+                              ? company.pendenciaOperacional
+                                ? 'Regularizando...'
+                                : 'Registrando...'
+                              : company.pendenciaOperacional
+                                ? 'Regularizar'
+                                : 'Registrar pendencia'}
+                          </button>
                           <Link
                             className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-900 transition hover:border-slate-400"
                             href={`/empresas/${company.id}`}
@@ -427,11 +618,12 @@ export default function CarteiraPage() {
                           </Link>
                           <button
                             className="inline-flex items-center justify-center rounded-lg border border-rose-300 px-3 py-1.5 text-sm font-medium text-rose-700 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-60"
-                            disabled={isRemovingId === company.id}
+                            disabled={isMutatingId === company.id}
                             onClick={() => void handleRemove(company)}
                             type="button"
                           >
-                            {isRemovingId === company.id
+                            {isMutatingId === company.id &&
+                            isMutatingAction === 'remove'
                               ? 'Retirando...'
                               : 'Retirar da carteira'}
                           </button>

@@ -23,14 +23,20 @@ import {
   STATUS_PROCURACAO_LABELS,
   STATUS_PROCURACAO_OPTIONS
 } from '@/lib/constants';
-import { formatCnpj, formatDateTime } from '@/lib/formatters';
+import {
+  formatCnpj,
+  formatDateTime,
+  toDateTimeLocalValue
+} from '@/lib/formatters';
 import { validateCompanyForm } from '@/lib/validators';
 
 type CompanyFormState = {
   cnpj: string;
   naCarteira: boolean;
+  pendenciaOperacional: boolean;
   nomeFantasia: string;
   observacoesOperacionais: string;
+  ultimaConferenciaOperacionalEm: string;
   razaoSocial: string;
   regimeTributario: RegimeTributario;
   responsavelInternoId: string;
@@ -41,8 +47,10 @@ type CompanyFormState = {
 const initialFormState: CompanyFormState = {
   cnpj: '',
   naCarteira: false,
+  pendenciaOperacional: false,
   nomeFantasia: '',
   observacoesOperacionais: '',
+  ultimaConferenciaOperacionalEm: '',
   razaoSocial: '',
   regimeTributario: 'SIMPLES_NACIONAL',
   responsavelInternoId: '',
@@ -54,8 +62,12 @@ function buildPayload(form: CompanyFormState): CompanyCreateInput {
   return {
     cnpj: form.cnpj.trim(),
     naCarteira: form.naCarteira,
+    pendenciaOperacional: form.pendenciaOperacional,
     nomeFantasia: form.nomeFantasia.trim() || undefined,
     observacoesOperacionais: form.observacoesOperacionais.trim() || undefined,
+    ultimaConferenciaOperacionalEm: form.ultimaConferenciaOperacionalEm.trim()
+      ? new Date(form.ultimaConferenciaOperacionalEm).toISOString()
+      : null,
     razaoSocial: form.razaoSocial.trim(),
     regimeTributario: form.regimeTributario,
     responsavelInternoId: form.responsavelInternoId.trim() || null,
@@ -68,8 +80,12 @@ function toFormState(company: CompanyDetailItem): CompanyFormState {
   return {
     cnpj: company.cnpj,
     naCarteira: company.naCarteira,
+    pendenciaOperacional: company.pendenciaOperacional,
     nomeFantasia: company.nomeFantasia ?? '',
     observacoesOperacionais: company.observacoesOperacionais ?? '',
+    ultimaConferenciaOperacionalEm: toDateTimeLocalValue(
+      company.ultimaConferenciaOperacionalEm
+    ),
     razaoSocial: company.razaoSocial,
     regimeTributario: company.regimeTributario,
     responsavelInternoId: company.responsavelInterno?.id ?? '',
@@ -352,6 +368,30 @@ export default function CompanyDetailPage() {
                 </div>
                 <div className="space-y-1">
                   <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Ultima conferencia operacional
+                  </dt>
+                  <dd className="text-sm font-medium text-slate-900">
+                    {formatDateTime(company.ultimaConferenciaOperacionalEm)}
+                  </dd>
+                </div>
+                <div className="space-y-1">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Pendencia operacional
+                  </dt>
+                  <dd className="text-sm font-medium text-slate-900">
+                    {company.pendenciaOperacional ? 'Sim' : 'Nao'}
+                  </dd>
+                </div>
+                <div className="space-y-1">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Regularizada em
+                  </dt>
+                  <dd className="text-sm font-medium text-slate-900">
+                    {formatDateTime(company.regularizadaEm)}
+                  </dd>
+                </div>
+                <div className="space-y-1">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
                     Responsavel interno
                   </dt>
                   <dd className="text-sm font-medium text-slate-900">
@@ -427,10 +467,10 @@ export default function CompanyDetailPage() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-5">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Edicao basica
+                  Edicao basica e controle operacional
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Atualize os campos principais do cadastro.
+                  Atualize os campos principais e os status manuais da carteira.
                 </p>
               </div>
 
@@ -609,6 +649,45 @@ export default function CompanyDetailPage() {
                         </option>
                       ))}
                     </select>
+                  </label>
+
+                  <label className="flex items-center gap-3 rounded-xl border border-slate-300 px-3 py-2">
+                    <input
+                      checked={form.pendenciaOperacional}
+                      className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                      name="pendenciaOperacional"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          pendenciaOperacional: event.target.checked
+                        }))
+                      }
+                      type="checkbox"
+                    />
+                    <span className="text-sm font-medium text-slate-700">
+                      Pendencia operacional
+                    </span>
+                  </label>
+
+                  <label className="space-y-2 md:col-span-2">
+                    <span className="block text-sm font-medium text-slate-700">
+                      Ultima conferencia operacional
+                    </span>
+                    <input
+                      className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                      name="ultimaConferenciaOperacionalEm"
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          ultimaConferenciaOperacionalEm: event.target.value
+                        }))
+                      }
+                      type="datetime-local"
+                      value={form.ultimaConferenciaOperacionalEm}
+                    />
+                    <p className="text-xs text-slate-500">
+                      Data e hora da ultima conferencia manual.
+                    </p>
                   </label>
                 </div>
 

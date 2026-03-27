@@ -82,9 +82,12 @@ model Empresa {
   responsavelInternoId    String?
   responsavelInterno      ResponsavelInterno?   @relation(fields: [responsavelInternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   naCarteira              Boolean              @default(false)
+  pendenciaOperacional    Boolean              @default(false)
   statusAcesso            StatusAcessoEmpresa   @default(NAO_VERIFICADO)
   statusProcuracao        StatusProcuracaoEmpresa @default(NAO_VERIFICADA)
   observacoesOperacionais String?               @db.Text
+  ultimaConferenciaOperacionalEm DateTime?
+  regularizadaEm          DateTime?
   ultimaVarreduraEm       DateTime?
   ultimoEventoRelevanteEm DateTime?
   createdAt               DateTime              @default(now())
@@ -93,6 +96,7 @@ model Empresa {
 
   @@index([responsavelInternoId])
   @@index([naCarteira])
+  @@index([pendenciaOperacional])
 }
 
 model IntegracaoEmpresa {
