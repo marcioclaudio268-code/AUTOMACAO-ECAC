@@ -143,6 +143,51 @@ export type ResponsavelInternoRecord = {
   };
 };
 
+export type DashboardResponsavelResumo = {
+  quantidadeEmpresas: number;
+  responsavelInternoEmail: string | null;
+  responsavelInternoId: string | null;
+  responsavelInternoNome: string;
+};
+
+export type DashboardSummary = {
+  distribuicaoPorResponsavel: DashboardResponsavelResumo[];
+  indicadores: {
+    totalEmpresasNaCarteira: number;
+    totalEmpresasComAcessoPendenteOuBloqueado: number;
+    totalEmpresasComPendenciaOperacional: number;
+    totalEmpresasComProcuracaoPendente: number;
+  };
+};
+
+export type PendenciaTipo = 'ACESSO' | 'OPERACIONAL' | 'PROCURACAO';
+
+export type PendenciaStatusAtual =
+  | StatusAcessoEmpresa
+  | StatusProcuracaoEmpresa
+  | 'PENDENTE';
+
+export type PendenciaListItem = {
+  empresaCnpj: string;
+  empresaId: string;
+  empresaNome: string;
+  empresaNomeFantasia: string | null;
+  linkTratamento: string;
+  motivo: string;
+  observacaoOperacional: string | null;
+  responsavelInternoId: string | null;
+  responsavelInternoNome: string;
+  statusAtual: PendenciaStatusAtual;
+  tipoPendencia: PendenciaTipo;
+  ultimaConferenciaOperacionalEm: string | null;
+};
+
+export type PendenciasListFilters = {
+  empresaId?: string | undefined;
+  responsavelInternoId?: string | undefined;
+  tipoPendencia?: PendenciaTipo | undefined;
+};
+
 export type ResponsavelInternoCreateInput = {
   ativo?: boolean | undefined;
   email: string;
@@ -359,4 +404,28 @@ export async function updateResponsavel(
     body: payload,
     method: 'PATCH'
   });
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  return apiRequest<DashboardSummary>('/dashboard/summary');
+}
+
+export async function listPendencias(
+  filters: PendenciasListFilters = {}
+): Promise<PendenciaListItem[]> {
+  const params = new URLSearchParams();
+
+  appendQueryParam(params, 'empresaId', filters.empresaId);
+  appendQueryParam(
+    params,
+    'responsavelInternoId',
+    filters.responsavelInternoId
+  );
+  appendQueryParam(params, 'tipoPendencia', filters.tipoPendencia);
+
+  const query = params.toString();
+
+  return apiRequest<PendenciaListItem[]>(
+    query ? `/pendencias?${query}` : '/pendencias'
+  );
 }

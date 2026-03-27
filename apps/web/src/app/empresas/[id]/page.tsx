@@ -11,6 +11,7 @@ import {
   updateCompany,
   type CompanyCreateInput,
   type CompanyDetailItem,
+  type CompanyUpdateInput,
   type RegimeTributario,
   type ResponsavelInternoRecord,
   type StatusAcessoEmpresa,
@@ -43,6 +44,13 @@ type CompanyFormState = {
   statusAcesso: StatusAcessoEmpresa;
   statusProcuracao: StatusProcuracaoEmpresa;
 };
+
+type OperationalQuickAction =
+  | 'registrarConferencia'
+  | 'marcarAcessoDisponivel'
+  | 'marcarProcuracaoValida'
+  | 'regularizarPendenciaOperacional'
+  | 'reabrirPendenciaOperacional';
 
 const initialFormState: CompanyFormState = {
   cnpj: '',
@@ -100,6 +108,15 @@ function formatResponsavelOption(responsavel: ResponsavelInternoRecord) {
   }`;
 }
 
+function formatOperationalDate(value: string | null | undefined) {
+  return value ? formatDateTime(value) : 'Nao registrada';
+}
+
+function formatOperationalText(value: string | null | undefined) {
+  const normalized = value?.trim();
+  return normalized && normalized.length > 0 ? normalized : 'Sem observacoes.';
+}
+
 export default function CompanyDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -112,6 +129,8 @@ export default function CompanyDetailPage() {
   const [form, setForm] = useState<CompanyFormState>(initialFormState);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeQuickAction, setActiveQuickAction] =
+    useState<OperationalQuickAction | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -208,6 +227,44 @@ export default function CompanyDetailPage() {
     }
   }
 
+  async function persistCompanyUpdate(
+    payload: CompanyUpdateInput,
+    successMessage: string,
+    quickAction: OperationalQuickAction | null = null
+  ) {
+    if (submitLockRef.current) {
+      return;
+    }
+
+    submitLockRef.current = true;
+    setIsSaving(true);
+    setActiveQuickAction(quickAction);
+    setError('');
+    setMessage('');
+    setFlashMessage('');
+
+    try {
+      if (!companyId) {
+        throw new Error('Empresa invalida.');
+      }
+
+      const updated = await updateCompany(companyId, payload);
+      setCompany(updated);
+      setForm(toFormState(updated));
+      setMessage(successMessage);
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : 'Falha ao atualizar empresa.'
+      );
+    } finally {
+      submitLockRef.current = false;
+      setIsSaving(false);
+      setActiveQuickAction(null);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
@@ -224,28 +281,61 @@ export default function CompanyDetailPage() {
       return;
     }
 
-    submitLockRef.current = true;
     setFlashMessage('');
-    setIsSaving(true);
+    await persistCompanyUpdate(buildPayload(form), 'Empresa atualizada com sucesso.');
+  }
 
-    try {
-      if (!companyId) {
-        throw new Error('Empresa invalida.');
-      }
+  async function handleQuickAction(action: OperationalQuickAction) {
+    const now = new Date().toISOString();
 
-      const updated = await updateCompany(companyId, buildPayload(form));
-      setCompany(updated);
-      setForm(toFormState(updated));
-      setMessage('Empresa atualizada com sucesso.');
-    } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : 'Falha ao atualizar empresa.'
-      );
-    } finally {
-      submitLockRef.current = false;
-      setIsSaving(false);
+    switch (action) {
+      case 'registrarConferencia':
+        await persistCompanyUpdate(
+          {
+            ultimaConferenciaOperacionalEm: now
+          },
+          'Conferencia operacional registrada agora.',
+          action
+        );
+        break;
+      case 'marcarAcessoDisponivel':
+        await persistCompanyUpdate(
+          {
+            statusAcesso: 'DISPONIVEL'
+          },
+          'Acesso marcado como disponivel.',
+          action
+        );
+        break;
+      case 'marcarProcuracaoValida':
+        await persistCompanyUpdate(
+          {
+            statusProcuracao: 'VALIDA'
+          },
+          'Procuracao marcada como valida.',
+          action
+        );
+        break;
+      case 'regularizarPendenciaOperacional':
+        await persistCompanyUpdate(
+          {
+            pendenciaOperacional: false,
+            regularizadaEm: now
+          },
+          'Pendencia operacional regularizada.',
+          action
+        );
+        break;
+      case 'reabrirPendenciaOperacional':
+        await persistCompanyUpdate(
+          {
+            pendenciaOperacional: true,
+            regularizadaEm: null
+          },
+          'Pendencia operacional reaberta.',
+          action
+        );
+        break;
     }
   }
 
@@ -292,6 +382,12 @@ export default function CompanyDetailPage() {
             >
               Carteira
             </Link>
+            <Link
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
+              href="/pendencias"
+            >
+              Pendencias
+            </Link>
             <button
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSigningOut}
@@ -322,14 +418,166 @@ export default function CompanyDetailPage() {
         ) : null}
 
         {company ? (
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
+                    Tratamento operacional manual
+                  </p>
+                  <h2 className="text-lg font-semibold text-slate-950">
+                    Tratar acesso, procuracao e pendencia operacional
+                  </h2>
+                  <p className="max-w-2xl text-sm leading-6 text-slate-600">
+                    Use os atalhos abaixo para registrar a acao manual e salvar
+                    o estado operacional diretamente nesta empresa.
+                  </p>
+                </div>
+
+                <dl className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Status de acesso
+                    </dt>
+                    <dd className="mt-1 text-sm font-medium text-slate-900">
+                      {STATUS_ACESSO_LABELS[company.statusAcesso]}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Status de procuracao
+                    </dt>
+                    <dd className="mt-1 text-sm font-medium text-slate-900">
+                      {STATUS_PROCURACAO_LABELS[company.statusProcuracao]}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Pendencia operacional
+                    </dt>
+                    <dd className="mt-1 text-sm font-medium text-slate-900">
+                      {company.pendenciaOperacional ? 'Sim' : 'Nao'}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Ultima conferencia
+                    </dt>
+                    <dd className="mt-1 text-sm font-medium text-slate-900">
+                      {formatOperationalDate(
+                        company.ultimaConferenciaOperacionalEm
+                      )}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Regularizada em
+                    </dt>
+                    <dd className="mt-1 text-sm font-medium text-slate-900">
+                      {formatOperationalDate(company.regularizadaEm)}
+                    </dd>
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      Observacoes operacionais
+                    </dt>
+                    <dd className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-900">
+                      {formatOperationalText(company.observacoesOperacionais)}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="space-y-3 xl:w-96">
+                <p className="text-sm font-medium text-slate-900">
+                  Acoes rapidas
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <button
+                    className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSaving}
+                    onClick={() => void handleQuickAction('registrarConferencia')}
+                    type="button"
+                  >
+                    {activeQuickAction === 'registrarConferencia'
+                      ? 'Registrando...'
+                      : 'Registrar conferencia agora'}
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSaving}
+                    onClick={() =>
+                      void handleQuickAction('marcarAcessoDisponivel')
+                    }
+                    type="button"
+                  >
+                    {activeQuickAction === 'marcarAcessoDisponivel'
+                      ? 'Aplicando...'
+                      : 'Marcar acesso como disponivel'}
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSaving}
+                    onClick={() =>
+                      void handleQuickAction('marcarProcuracaoValida')
+                    }
+                    type="button"
+                  >
+                    {activeQuickAction === 'marcarProcuracaoValida'
+                      ? 'Aplicando...'
+                      : 'Marcar procuracao como valida'}
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSaving}
+                    onClick={() =>
+                      void handleQuickAction(
+                        'regularizarPendenciaOperacional'
+                      )
+                    }
+                    type="button"
+                  >
+                    {activeQuickAction === 'regularizarPendenciaOperacional'
+                      ? 'Aplicando...'
+                      : 'Marcar pendencia operacional como regularizada'}
+                  </button>
+                  <button
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isSaving}
+                    onClick={() =>
+                      void handleQuickAction('reabrirPendenciaOperacional')
+                    }
+                    type="button"
+                  >
+                    {activeQuickAction === 'reabrirPendenciaOperacional'
+                      ? 'Aplicando...'
+                      : 'Reabrir pendencia operacional'}
+                  </button>
+                </div>
+                <Link
+                  className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
+                  href={`/pendencias?empresaId=${company.id}`}
+                >
+                  Ver pendencias desta empresa
+                </Link>
+                <p className="text-xs leading-5 text-slate-500">
+                  As acoes salvam imediatamente no registro da empresa e
+                  atualizam o painel de pendencias na proxima consulta.
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {company ? (
           <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
             <section className="space-y-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Dados da empresa
+                  Dados cadastrais
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Informacoes atuais vindas da API.
+                  Informacoes cadastrais atuais vindas da API.
                 </p>
               </div>
 
@@ -467,10 +715,11 @@ export default function CompanyDetailPage() {
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-5">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Edicao basica e controle operacional
+                  Edicao cadastral
                 </h2>
                 <p className="text-sm text-slate-600">
-                  Atualize os campos principais e os status manuais da carteira.
+                  Use os atalhos de tratamento acima para registrar as acoes
+                  manuais. Aqui ficam os ajustes finos e campos persistidos.
                 </p>
               </div>
 

@@ -1,5 +1,6 @@
 import type {
   RegimeTributario,
+  PendenciaTipo,
   StatusAcessoEmpresa,
   StatusProcuracaoEmpresa
 } from '@/lib/api';
@@ -30,6 +31,12 @@ export const STATUS_PROCURACAO_OPTIONS: Option<StatusProcuracaoEmpresa>[] = [
   { label: 'Nao verificada', value: 'NAO_VERIFICADA' }
 ];
 
+export const PENDENCIA_TIPO_OPTIONS: Option<PendenciaTipo>[] = [
+  { label: 'Acesso', value: 'ACESSO' },
+  { label: 'Operacional', value: 'OPERACIONAL' },
+  { label: 'Procuracao', value: 'PROCURACAO' }
+];
+
 export const STATUS_ACESSO_LABELS: Record<StatusAcessoEmpresa, string> = {
   BLOQUEADO: 'Bloqueado',
   DISPONIVEL: 'Disponivel',
@@ -45,4 +52,10 @@ export const STATUS_PROCURACAO_LABELS: Record<
   NAO_VERIFICADA: 'Nao verificada',
   PENDENTE: 'Pendente',
   VALIDA: 'Valida'
+};
+
+export const PENDENCIA_TIPO_LABELS: Record<PendenciaTipo, string> = {
+  ACESSO: 'Acesso',
+  OPERACIONAL: 'Operacional',
+  PROCURACAO: 'Procuracao'
 };
