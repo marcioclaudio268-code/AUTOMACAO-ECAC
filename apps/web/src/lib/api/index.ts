@@ -143,6 +143,23 @@ export type ResponsavelInternoRecord = {
   };
 };
 
+export type DashboardResponsavelResumo = {
+  quantidadeEmpresas: number;
+  responsavelInternoEmail: string | null;
+  responsavelInternoId: string | null;
+  responsavelInternoNome: string;
+};
+
+export type DashboardSummary = {
+  distribuicaoPorResponsavel: DashboardResponsavelResumo[];
+  indicadores: {
+    totalEmpresasNaCarteira: number;
+    totalEmpresasComAcessoPendenteOuBloqueado: number;
+    totalEmpresasComPendenciaOperacional: number;
+    totalEmpresasComProcuracaoPendente: number;
+  };
+};
+
 export type ResponsavelInternoCreateInput = {
   ativo?: boolean | undefined;
   email: string;
@@ -359,4 +376,8 @@ export async function updateResponsavel(
     body: payload,
     method: 'PATCH'
   });
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  return apiRequest<DashboardSummary>('/dashboard/summary');
 }
