@@ -28,6 +28,7 @@ import { validateCompanyForm } from '@/lib/validators';
 
 type CompanyFormState = {
   cnpj: string;
+  naCarteira: boolean;
   nomeFantasia: string;
   observacoesOperacionais: string;
   razaoSocial: string;
@@ -39,6 +40,7 @@ type CompanyFormState = {
 
 const initialFormState: CompanyFormState = {
   cnpj: '',
+  naCarteira: false,
   nomeFantasia: '',
   observacoesOperacionais: '',
   razaoSocial: '',
@@ -51,6 +53,7 @@ const initialFormState: CompanyFormState = {
 function buildPayload(form: CompanyFormState): CompanyCreateInput {
   return {
     cnpj: form.cnpj.trim(),
+    naCarteira: form.naCarteira,
     nomeFantasia: form.nomeFantasia.trim() || undefined,
     observacoesOperacionais: form.observacoesOperacionais.trim() || undefined,
     razaoSocial: form.razaoSocial.trim(),
@@ -64,6 +67,7 @@ function buildPayload(form: CompanyFormState): CompanyCreateInput {
 function toFormState(company: CompanyDetailItem): CompanyFormState {
   return {
     cnpj: company.cnpj,
+    naCarteira: company.naCarteira,
     nomeFantasia: company.nomeFantasia ?? '',
     observacoesOperacionais: company.observacoesOperacionais ?? '',
     razaoSocial: company.razaoSocial,
@@ -266,6 +270,12 @@ export default function CompanyDetailPage() {
             >
               Responsaveis
             </Link>
+            <Link
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
+              href="/carteira"
+            >
+              Carteira
+            </Link>
             <button
               className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSigningOut}
@@ -348,6 +358,14 @@ export default function CompanyDetailPage() {
                     {company.responsavelInterno
                       ? company.responsavelInterno.nome
                       : '-'}
+                  </dd>
+                </div>
+                <div className="space-y-1">
+                  <dt className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Na carteira
+                  </dt>
+                  <dd className="text-sm font-medium text-slate-900">
+                    {company.naCarteira ? 'Sim' : 'Nao'}
                   </dd>
                 </div>
                 <div className="space-y-1">
@@ -479,11 +497,11 @@ export default function CompanyDetailPage() {
                 <span className="block text-sm font-medium text-slate-700">
                   Responsavel interno (opcional)
                 </span>
-                <select
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                  name="responsavelInternoId"
-                  onChange={(event) =>
-                    setForm((current) => ({
+                  <select
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                    name="responsavelInternoId"
+                    onChange={(event) =>
+                      setForm((current) => ({
                       ...current,
                       responsavelInternoId: event.target.value
                     }))
@@ -494,14 +512,32 @@ export default function CompanyDetailPage() {
                     {responsaveis.length === 0
                       ? 'Sem responsavel cadastrado'
                       : 'Sem responsavel (opcional)'}
-                  </option>
-                  {responsaveis.map((responsavel) => (
-                    <option key={responsavel.id} value={responsavel.id}>
-                      {formatResponsavelOption(responsavel)}
                     </option>
-                  ))}
-                </select>
-              </label>
+                    {responsaveis.map((responsavel) => (
+                      <option key={responsavel.id} value={responsavel.id}>
+                        {formatResponsavelOption(responsavel)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex items-center gap-3 rounded-xl border border-slate-300 px-3 py-2">
+                  <input
+                    checked={form.naCarteira}
+                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                    name="naCarteira"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        naCarteira: event.target.checked
+                      }))
+                    }
+                    type="checkbox"
+                  />
+                  <span className="text-sm font-medium text-slate-700">
+                    Na carteira operacional
+                  </span>
+                </label>
 
                   <label className="space-y-2">
                     <span className="block text-sm font-medium text-slate-700">

@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -57,6 +58,10 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsEnum(StatusProcuracaoEmpresa)
   statusProcuracao?: StatusProcuracaoEmpresa;
+
+  @IsOptional()
+  @IsBoolean()
+  naCarteira?: boolean;
 
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value

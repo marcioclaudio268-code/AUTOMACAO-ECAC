@@ -108,6 +108,12 @@ export default function EmpresasPage() {
           <div className="flex flex-wrap gap-3">
             <Link
               className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
+              href="/carteira"
+            >
+              Carteira
+            </Link>
+            <Link
+              className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
               href="/responsaveis"
             >
               Responsaveis
@@ -175,6 +181,7 @@ export default function EmpresasPage() {
                     <th className="px-3 py-3 font-medium">
                       Status de procuracao
                     </th>
+                    <th className="px-3 py-3 font-medium">Carteira</th>
                     <th className="px-3 py-3 font-medium">Acoes</th>
                   </tr>
                 </thead>
@@ -200,6 +207,9 @@ export default function EmpresasPage() {
                       </td>
                       <td className="px-3 py-4 text-slate-700">
                         {STATUS_PROCURACAO_LABELS[company.statusProcuracao]}
+                      </td>
+                      <td className="px-3 py-4 text-slate-700">
+                        {company.naCarteira ? 'Na carteira' : 'Fora da carteira'}
                       </td>
                       <td className="px-3 py-4">
                         <Link

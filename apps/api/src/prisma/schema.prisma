@@ -81,6 +81,7 @@ model Empresa {
   regimeTributario        RegimeTributario
   responsavelInternoId    String?
   responsavelInterno      ResponsavelInterno?   @relation(fields: [responsavelInternoId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  naCarteira              Boolean              @default(false)
   statusAcesso            StatusAcessoEmpresa   @default(NAO_VERIFICADO)
   statusProcuracao        StatusProcuracaoEmpresa @default(NAO_VERIFICADA)
   observacoesOperacionais String?               @db.Text
@@ -91,6 +92,7 @@ model Empresa {
   integracoes             IntegracaoEmpresa[]
 
   @@index([responsavelInternoId])
+  @@index([naCarteira])
 }
 
 model IntegracaoEmpresa {

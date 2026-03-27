@@ -13,6 +13,7 @@ import {
 import { isBasicCnpj, normalizeCnpj } from '../../common/utils/cnpj';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { ListCompaniesQueryDto } from './dto/list-companies-query.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 const listInclude = {
@@ -66,6 +67,7 @@ export class CompaniesService {
     const data: Prisma.EmpresaCreateInput = {
       cnpj,
       nomeFantasia: dto.nomeFantasia?.trim() || null,
+      naCarteira: dto.naCarteira ?? false,
       observacoesOperacionais: dto.observacoesOperacionais?.trim() || null,
       razaoSocial: dto.razaoSocial.trim(),
       regimeTributario: dto.regimeTributario,
@@ -89,9 +91,28 @@ export class CompaniesService {
     });
   }
 
-  async findAll() {
+  async findAll(query: ListCompaniesQueryDto = {}) {
+    const where: Prisma.EmpresaWhereInput = {};
+
+    if (query.naCarteira !== undefined) {
+      where.naCarteira = query.naCarteira;
+    }
+
+    if (query.responsavelInternoId) {
+      where.responsavelInternoId = query.responsavelInternoId;
+    }
+
+    if (query.statusAcesso !== undefined) {
+      where.statusAcesso = query.statusAcesso;
+    }
+
+    if (query.statusProcuracao !== undefined) {
+      where.statusProcuracao = query.statusProcuracao;
+    }
+
     return this.prisma.empresa.findMany({
       include: listInclude,
+      where,
       orderBy: {
         createdAt: 'desc'
       }
@@ -137,6 +158,10 @@ export class CompaniesService {
 
     if (dto.regimeTributario !== undefined) {
       data.regimeTributario = dto.regimeTributario;
+    }
+
+    if (dto.naCarteira !== undefined) {
+      data.naCarteira = dto.naCarteira;
     }
 
     if (dto.responsavelInternoId !== undefined) {

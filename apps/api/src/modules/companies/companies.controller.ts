@@ -5,12 +5,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards
 } from '@nestjs/common';
 
 import { JwtCookieAuthGuard } from '../auth/guards/jwt-cookie-auth.guard';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { ListCompaniesQueryDto } from './dto/list-companies-query.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 
 @UseGuards(JwtCookieAuthGuard)
@@ -24,8 +26,8 @@ export class CompaniesController {
   }
 
   @Get()
-  findAll() {
-    return this.companiesService.findAll();
+  findAll(@Query() query: ListCompaniesQueryDto) {
+    return this.companiesService.findAll(query);
   }
 
   @Get(':id')

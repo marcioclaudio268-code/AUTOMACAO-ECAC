@@ -90,6 +90,7 @@ async function main() {
     create: {
       cnpj: '11222333000181',
       nomeFantasia: 'Alpha Contabilidade',
+      naCarteira: true,
       observacoesOperacionais: 'Cadastro inicial de seed.',
       razaoSocial: 'Alpha Contabilidade Ltda',
       regimeTributario: RegimeTributario.SIMPLES_NACIONAL,
@@ -99,6 +100,7 @@ async function main() {
     },
     update: {
       nomeFantasia: 'Alpha Contabilidade',
+      naCarteira: true,
       observacoesOperacionais: 'Cadastro inicial de seed.',
       razaoSocial: 'Alpha Contabilidade Ltda',
       regimeTributario: RegimeTributario.SIMPLES_NACIONAL,
@@ -115,6 +117,7 @@ async function main() {
     create: {
       cnpj: '22333444000192',
       nomeFantasia: 'Beta Servicos Contabeis',
+      naCarteira: false,
       observacoesOperacionais: 'Cadastro inicial de seed.',
       razaoSocial: 'Beta Servicos Contabeis Ltda',
       regimeTributario: RegimeTributario.LUCRO_PRESUMIDO,
@@ -124,6 +127,7 @@ async function main() {
     },
     update: {
       nomeFantasia: 'Beta Servicos Contabeis',
+      naCarteira: false,
       observacoesOperacionais: 'Cadastro inicial de seed.',
       razaoSocial: 'Beta Servicos Contabeis Ltda',
       regimeTributario: RegimeTributario.LUCRO_PRESUMIDO,

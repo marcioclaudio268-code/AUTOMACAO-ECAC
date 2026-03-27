@@ -63,6 +63,7 @@ export type CompanyBase = {
   cnpj: string;
   createdAt: string;
   id: string;
+  naCarteira: boolean;
   nomeFantasia: string | null;
   observacoesOperacionais: string | null;
   razaoSocial: string;
@@ -99,6 +100,7 @@ export type CompanyDetailItem = CompanyBase & {
 
 export type CompanyCreateInput = {
   cnpj: string;
+  naCarteira?: boolean | undefined;
   nomeFantasia?: string | undefined;
   observacoesOperacionais?: string | undefined;
   razaoSocial: string;
@@ -109,6 +111,13 @@ export type CompanyCreateInput = {
 };
 
 export type CompanyUpdateInput = Partial<CompanyCreateInput>;
+
+export type CompanyListFilters = {
+  naCarteira?: boolean | undefined;
+  responsavelInternoId?: string | undefined;
+  statusAcesso?: StatusAcessoEmpresa | undefined;
+  statusProcuracao?: StatusProcuracaoEmpresa | undefined;
+};
 
 export type ResponsavelInternoRecord = {
   ativo: boolean;
@@ -157,6 +166,22 @@ function parseResponseBody(text: string): unknown {
   }
 }
 
+function appendQueryParam(
+  params: URLSearchParams,
+  key: string,
+  value: string | boolean | undefined
+) {
+  if (value === undefined) {
+    return;
+  }
+
+  if (typeof value === 'string' && !value.trim()) {
+    return;
+  }
+
+  params.set(key, String(value));
+}
+
 function getErrorMessage(payload: unknown, status: number): string {
   if (typeof payload === 'string' && payload.trim()) {
     return payload;
@@ -172,7 +197,7 @@ function getErrorMessage(payload: unknown, status: number): string {
         .filter(Boolean);
 
       if (messages.length > 0) {
-        return messages.join(' • ');
+        return messages.join(' | ');
       }
     }
 
@@ -242,8 +267,34 @@ export async function logout(): Promise<{ success: boolean }> {
   });
 }
 
-export async function listCompanies(): Promise<CompanyListItem[]> {
-  return apiRequest<CompanyListItem[]>('/companies');
+export async function listCompanies(
+  filters: CompanyListFilters = {}
+): Promise<CompanyListItem[]> {
+  const params = new URLSearchParams();
+
+  appendQueryParam(params, 'naCarteira', filters.naCarteira);
+  appendQueryParam(
+    params,
+    'responsavelInternoId',
+    filters.responsavelInternoId
+  );
+  appendQueryParam(params, 'statusAcesso', filters.statusAcesso);
+  appendQueryParam(params, 'statusProcuracao', filters.statusProcuracao);
+
+  const query = params.toString();
+
+  return apiRequest<CompanyListItem[]>(
+    query ? `/companies?${query}` : '/companies'
+  );
+}
+
+export async function listCarteira(
+  filters: Omit<CompanyListFilters, 'naCarteira'> = {}
+): Promise<CompanyListItem[]> {
+  return listCompanies({
+    ...filters,
+    naCarteira: true
+  });
 }
 
 export async function getCompany(id: string): Promise<CompanyDetailItem> {
