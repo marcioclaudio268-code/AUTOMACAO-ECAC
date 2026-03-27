@@ -14,6 +14,7 @@
     "prisma:generate": "corepack pnpm --filter @ecac/api prisma:generate",
     "db:generate": "corepack pnpm --filter @ecac/api prisma:generate",
     "db:migrate": "corepack pnpm --filter @ecac/api db:migrate",
+    "db:status": "corepack pnpm --filter @ecac/api db:status",
     "db:seed": "corepack pnpm --filter @ecac/api db:seed",
     "build": "corepack pnpm -r --if-present build",
     "lint": "corepack pnpm -r --if-present lint",
