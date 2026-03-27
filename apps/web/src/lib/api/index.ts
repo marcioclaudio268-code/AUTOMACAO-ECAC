@@ -166,10 +166,13 @@ function getErrorMessage(payload: unknown, status: number): string {
     const message = (payload as { message?: unknown }).message;
 
     if (Array.isArray(message) && message.length > 0) {
-      const firstMessage = message[0];
+      const messages = message
+        .filter((item): item is string => typeof item === 'string')
+        .map((item) => item.trim())
+        .filter(Boolean);
 
-      if (typeof firstMessage === 'string' && firstMessage.trim()) {
-        return firstMessage;
+      if (messages.length > 0) {
+        return messages.join(' • ');
       }
     }
 

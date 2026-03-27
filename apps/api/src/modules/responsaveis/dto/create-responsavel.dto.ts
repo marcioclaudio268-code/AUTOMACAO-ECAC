@@ -4,18 +4,19 @@ import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-vali
 export class CreateResponsavelDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'nome e obrigatorio.' })
   nome!: string;
 
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value
   )
-  @IsEmail()
+  @IsNotEmpty({ message: 'email e obrigatorio.' })
+  @IsEmail({}, { message: 'email invalido.' })
   email!: string;
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'usuarioInternoId e obrigatorio.' })
   usuarioInternoId!: string;
 
   @Transform(({ value }) => {

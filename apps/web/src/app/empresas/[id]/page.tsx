@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import { requireSession, signOut } from '@/lib/auth';
@@ -24,6 +24,7 @@ import {
   STATUS_PROCURACAO_OPTIONS
 } from '@/lib/constants';
 import { formatCnpj, formatDateTime } from '@/lib/formatters';
+import { validateCompanyForm } from '@/lib/validators';
 
 type CompanyFormState = {
   cnpj: string;
@@ -83,6 +84,7 @@ export default function CompanyDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const companyId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const submitLockRef = useRef(false);
   const [company, setCompany] = useState<CompanyDetailItem | null>(null);
   const [responsaveis, setResponsaveis] = useState<ResponsavelInternoRecord[]>(
     []
@@ -93,6 +95,16 @@ export default function CompanyDetailPage() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [flashMessage, setFlashMessage] = useState('');
+
+  useEffect(() => {
+    const paramsSearch = new URLSearchParams(window.location.search);
+    setFlashMessage(
+      paramsSearch.get('flash')?.startsWith('created:')
+        ? 'Empresa cadastrada com sucesso.'
+        : ''
+    );
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -180,6 +192,20 @@ export default function CompanyDetailPage() {
     event.preventDefault();
     setError('');
     setMessage('');
+
+    if (submitLockRef.current) {
+      return;
+    }
+
+    const validationError = validateCompanyForm(form, responsaveis);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    submitLockRef.current = true;
+    setFlashMessage('');
     setIsSaving(true);
 
     try {
@@ -198,6 +224,7 @@ export default function CompanyDetailPage() {
           : 'Falha ao atualizar empresa.'
       );
     } finally {
+      submitLockRef.current = false;
       setIsSaving(false);
     }
   }
@@ -251,14 +278,20 @@ export default function CompanyDetailPage() {
         </header>
 
         {error ? (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <p
+            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            role="alert"
+          >
             {error}
           </p>
         ) : null}
 
-        {message ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {message}
+        {message || flashMessage ? (
+          <p
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+            role="status"
+          >
+            {message || flashMessage}
           </p>
         ) : null}
 
@@ -383,8 +416,9 @@ export default function CompanyDetailPage() {
                 </p>
               </div>
 
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div className="grid gap-4 md:grid-cols-2">
+              <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+                <fieldset className="space-y-5" disabled={isSaving}>
+                  <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-2">
                     <span className="block text-sm font-medium text-slate-700">
                       CNPJ
@@ -443,7 +477,7 @@ export default function CompanyDetailPage() {
 
               <label className="space-y-2">
                 <span className="block text-sm font-medium text-slate-700">
-                  Responsavel interno
+                  Responsavel interno (opcional)
                 </span>
                 <select
                   className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
@@ -451,15 +485,15 @@ export default function CompanyDetailPage() {
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
-                          responsavelInternoId: event.target.value
-                        }))
-                      }
+                      responsavelInternoId: event.target.value
+                    }))
+                  }
                   value={form.responsavelInternoId}
                 >
                   <option value="">
                     {responsaveis.length === 0
                       ? 'Sem responsavel cadastrado'
-                      : 'Sem responsavel'}
+                      : 'Sem responsavel (opcional)'}
                   </option>
                   {responsaveis.map((responsavel) => (
                     <option key={responsavel.id} value={responsavel.id}>
@@ -560,14 +594,19 @@ export default function CompanyDetailPage() {
                 </label>
 
                 {error ? (
-                  <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                  <p
+                    className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+                    role="alert"
+                  >
                     {error}
                   </p>
                 ) : null}
+                </fieldset>
 
                 <div className="flex flex-wrap gap-3">
                   <button
                     className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-busy={isSaving}
                     disabled={isSaving}
                     type="submit"
                   >

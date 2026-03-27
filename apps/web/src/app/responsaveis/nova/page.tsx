@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import {
@@ -9,6 +9,7 @@ import {
   type ResponsavelInternoCreateInput
 } from '@/lib/api';
 import { requireSession, signOut } from '@/lib/auth';
+import { validateResponsavelForm } from '@/lib/validators';
 
 type ResponsavelFormState = {
   ativo: boolean;
@@ -35,6 +36,7 @@ function buildPayload(form: ResponsavelFormState): ResponsavelInternoCreateInput
 
 export default function NovoResponsavelPage() {
   const router = useRouter();
+  const submitLockRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -103,11 +105,24 @@ export default function NovoResponsavelPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
+
+    if (submitLockRef.current) {
+      return;
+    }
+
+    const validationError = validateResponsavelForm(form);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    submitLockRef.current = true;
     setIsSaving(true);
 
     try {
-      await createResponsavel(buildPayload(form));
-      router.replace('/responsaveis');
+      const created = await createResponsavel(buildPayload(form));
+      router.replace(`/responsaveis?flash=created:${created.id}`);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -115,6 +130,7 @@ export default function NovoResponsavelPage() {
           : 'Falha ao cadastrar responsavel.'
       );
     } finally {
+      submitLockRef.current = false;
       setIsSaving(false);
     }
   }
@@ -162,95 +178,101 @@ export default function NovoResponsavelPage() {
         </header>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-2">
-                <span className="block text-sm font-medium text-slate-700">
-                  Nome
-                </span>
-                <input
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                  name="nome"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      nome: event.target.value
-                    }))
-                  }
-                  required
-                  type="text"
-                  value={form.nome}
-                />
-              </label>
+          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+            <fieldset className="space-y-5" disabled={isSaving}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2">
+                  <span className="block text-sm font-medium text-slate-700">
+                    Nome
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                    name="nome"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        nome: event.target.value
+                      }))
+                    }
+                    required
+                    type="text"
+                    value={form.nome}
+                  />
+                </label>
 
-              <label className="space-y-2">
-                <span className="block text-sm font-medium text-slate-700">
-                  Email
-                </span>
-                <input
-                  autoComplete="email"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                  name="email"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      email: event.target.value
-                    }))
-                  }
-                  required
-                  type="email"
-                  value={form.email}
-                />
-              </label>
+                <label className="space-y-2">
+                  <span className="block text-sm font-medium text-slate-700">
+                    Email
+                  </span>
+                  <input
+                    autoComplete="email"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                    name="email"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        email: event.target.value
+                      }))
+                    }
+                    required
+                    type="email"
+                    value={form.email}
+                  />
+                </label>
 
-              <label className="space-y-2">
-                <span className="block text-sm font-medium text-slate-700">
-                  Usuario interno ID
-                </span>
-                <input
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
-                  name="usuarioInternoId"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      usuarioInternoId: event.target.value
-                    }))
-                  }
-                  placeholder="Preenchido com a sessao atual"
-                  required
-                  type="text"
-                  value={form.usuarioInternoId}
-                />
-              </label>
+                <label className="space-y-2">
+                  <span className="block text-sm font-medium text-slate-700">
+                    Usuario interno ID
+                  </span>
+                  <input
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-900"
+                    name="usuarioInternoId"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        usuarioInternoId: event.target.value
+                      }))
+                    }
+                    placeholder="Preenchido com a sessao atual"
+                    required
+                    type="text"
+                    value={form.usuarioInternoId}
+                  />
+                </label>
 
-              <label className="flex items-center gap-3 rounded-xl border border-slate-300 px-3 py-2">
-                <input
-                  checked={form.ativo}
-                  className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                  name="ativo"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      ativo: event.target.checked
-                    }))
-                  }
-                  type="checkbox"
-                />
-                <span className="text-sm font-medium text-slate-700">
-                  Ativo
-                </span>
-              </label>
-            </div>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-300 px-3 py-2">
+                  <input
+                    checked={form.ativo}
+                    className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                    name="ativo"
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        ativo: event.target.checked
+                      }))
+                    }
+                    type="checkbox"
+                  />
+                  <span className="text-sm font-medium text-slate-700">
+                    Ativo
+                  </span>
+                </label>
+              </div>
 
-            {error ? (
-              <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                {error}
-              </p>
-            ) : null}
+              {error ? (
+                <p
+                  className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+                  role="alert"
+                >
+                  {error}
+                </p>
+              ) : null}
+            </fieldset>
 
             <div className="flex flex-wrap gap-3">
               <button
                 className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                aria-busy={isSaving}
                 disabled={isSaving}
                 type="submit"
               >

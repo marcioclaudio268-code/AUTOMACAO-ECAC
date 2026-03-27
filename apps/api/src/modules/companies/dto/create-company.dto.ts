@@ -17,6 +17,7 @@ import { normalizeCnpj } from '../../../common/utils/cnpj';
 export class CreateCompanyDto {
   @Transform(({ value }) => normalizeCnpj(value))
   @IsString()
+  @IsNotEmpty({ message: 'cnpj e obrigatorio.' })
   @Matches(/^\d{14}$/, {
     message: 'cnpj deve conter 14 digitos.'
   })
@@ -26,7 +27,7 @@ export class CreateCompanyDto {
     typeof value === 'string' ? value.trim() : value
   )
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'razaoSocial e obrigatoria.' })
   razaoSocial!: string;
 
   @Transform(({ value }) =>
@@ -36,7 +37,9 @@ export class CreateCompanyDto {
   @IsString()
   nomeFantasia?: string;
 
-  @IsEnum(RegimeTributario)
+  @IsEnum(RegimeTributario, {
+    message: 'regimeTributario invalido.'
+  })
   regimeTributario!: RegimeTributario;
 
   @Transform(({ value }) =>

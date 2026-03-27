@@ -23,8 +23,16 @@ export default function ResponsaveisPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [flashMessage, setFlashMessage] = useState('');
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setFlashMessage(
+      params.get('flash')?.startsWith('created:')
+        ? 'Responsavel cadastrado com sucesso.'
+        : ''
+    );
+
     let active = true;
 
     async function load() {
@@ -135,12 +143,24 @@ export default function ResponsaveisPage() {
             </div>
           </div>
 
+          {flashMessage ? (
+            <p
+              className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+              role="status"
+            >
+              {flashMessage}
+            </p>
+          ) : null}
+
           {loading ? (
             <p className="py-8 text-sm text-slate-600">
               Carregando responsaveis...
             </p>
           ) : error ? (
-            <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <p
+              className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+              role="alert"
+            >
               {error}
             </p>
           ) : responsaveis.length === 0 ? (

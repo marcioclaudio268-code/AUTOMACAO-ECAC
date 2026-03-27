@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/lib/api';
 import { requireSession, signOut } from '@/lib/auth';
 import { formatDateTime } from '@/lib/formatters';
+import { validateResponsavelForm } from '@/lib/validators';
 
 type ResponsavelFormState = {
   ativo: boolean;
@@ -49,6 +50,7 @@ export default function ResponsavelDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const responsavelId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const submitLockRef = useRef(false);
   const [responsavel, setResponsavel] = useState<ResponsavelInternoRecord | null>(
     null
   );
@@ -130,6 +132,19 @@ export default function ResponsavelDetailPage() {
     event.preventDefault();
     setError('');
     setMessage('');
+
+    if (submitLockRef.current) {
+      return;
+    }
+
+    const validationError = validateResponsavelForm(form);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    submitLockRef.current = true;
     setIsSaving(true);
 
     try {
@@ -148,6 +163,7 @@ export default function ResponsavelDetailPage() {
           : 'Falha ao atualizar responsavel.'
       );
     } finally {
+      submitLockRef.current = false;
       setIsSaving(false);
     }
   }
@@ -195,13 +211,19 @@ export default function ResponsavelDetailPage() {
         </header>
 
         {error ? (
-          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <p
+            className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+            role="alert"
+          >
             {error}
           </p>
         ) : null}
 
         {message ? (
-          <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          <p
+            className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+            role="status"
+          >
             {message}
           </p>
         ) : null}
@@ -281,8 +303,9 @@ export default function ResponsavelDetailPage() {
                 </p>
               </div>
 
-              <form className="space-y-5" onSubmit={handleSubmit}>
-                <div className="grid gap-4 md:grid-cols-2">
+              <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+                <fieldset className="space-y-5" disabled={isSaving}>
+                  <div className="grid gap-4 md:grid-cols-2">
                   <label className="space-y-2">
                     <span className="block text-sm font-medium text-slate-700">
                       Nome
@@ -358,23 +381,24 @@ export default function ResponsavelDetailPage() {
                       Ativo
                     </span>
                   </label>
-                </div>
+                  </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isSaving}
-                    type="submit"
-                  >
-                    {isSaving ? 'Salvando...' : 'Salvar alteracoes'}
-                  </button>
-                  <Link
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
-                    href="/responsaveis"
-                  >
-                    Voltar
-                  </Link>
-                </div>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isSaving}
+                      type="submit"
+                    >
+                      {isSaving ? 'Salvando...' : 'Salvar alteracoes'}
+                    </button>
+                    <Link
+                      className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-slate-400"
+                      href="/responsaveis"
+                    >
+                      Voltar
+                    </Link>
+                  </div>
+                </fieldset>
               </form>
             </section>
           </div>
